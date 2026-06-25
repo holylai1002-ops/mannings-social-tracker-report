@@ -1,19 +1,14 @@
 name: Sync to Hugging Face Hub
 on:
   push:
-    branches: [main]
-
+    branches: [main] # or your default branch
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v6
       - uses: huggingface/hub-sync@v0.1.0
         with:
           github_repo_id: ${{ github.repository }}
-          huggingface_repo_id: hyhlai/mannings-social-tracker-report
+          huggingface_repo_id: "hyhlai/mannings-social-tracker-report"
+          hf_token: ${{ secrets.HF_FIRST_TOKEN }}
