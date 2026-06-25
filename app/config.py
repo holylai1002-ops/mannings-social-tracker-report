@@ -35,5 +35,9 @@ class Settings(BaseSettings):
     fpk_email: str = ""
     fpk_password: str = ""
 
+    # Passcode authentication
+    app_passcode: str = "fimmick26"
+    session_secret: str = "mannings-session-secret-2026-please-change"
+
 
 settings = Settings()

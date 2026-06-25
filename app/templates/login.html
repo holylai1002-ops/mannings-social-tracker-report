@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mannings Dashboard — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      padding: 40px;
+      width: 360px;
+      max-width: 90vw;
+    }
+    .brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #18181B;
+      margin-bottom: 4px;
+    }
+    .brand p {
+      font-size: 13px;
+      color: #A1A1AA;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #52525B;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 2px solid #E4E4E7;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input[type="password"]:focus {
+      border-color: #5B73E8;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+      background: #5B73E8;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover {
+      background: #4A60D4;
+    }
+    .error {
+      background: #FEF2F2;
+      color: #DC2626;
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="brand">
+      <h1>Mannings</h1>
+      <p>Social Media Dashboard</p>
+    </div>
+    {% if error %}
+    <div class="error">Incorrect passcode. Please try again.</div>
+    {% endif %}
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label>Passcode</label>
+        <input type="password" name="passcode" placeholder="Enter passcode" autofocus required />
+      </div>
+      <button type="submit" class="btn">Enter Dashboard</button>
+    </form>
+  </div>
+</body>
+</html>
