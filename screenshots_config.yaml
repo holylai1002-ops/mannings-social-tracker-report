@@ -1,0 +1,36 @@
+# Fanpage Karma Screenshot Configuration
+# ==========================================
+#
+# Manual workflow:
+#   1. Login to https://www.fanpagekarma.com (Sindy Google account)
+#   2. Navigate to Mannings > Competitor Analysis
+#   3. For each view below, take a screenshot (Win+Shift+S or PrtScn)
+#   4. Save as PNG to: screenshots/{year}_{month}/{file}.png
+#
+# The dashboard auto-detects any PNG in the period folder and displays it.
+
+screenshots:
+  - file: "competitor_overview"
+    label: "Competitor Overview"
+    description: "Overall competitor benchmark — Mannings vs competitors"
+    source: "FPK > Mannings > Competitor Analysis > Overview"
+
+  - file: "competitor_facebook"
+    label: "Facebook Competitor Analysis"
+    description: "Facebook page performance vs competitors"
+    source: "FPK > Mannings > Competitor Analysis > Facebook"
+
+  - file: "competitor_instagram"
+    label: "Instagram Competitor Analysis"
+    description: "Instagram account performance vs competitors"
+    source: "FPK > Mannings > Competitor Analysis > Instagram"
+
+  - file: "competitor_engagement"
+    label: "Engagement Comparison"
+    description: "Engagement rate and interaction metrics"
+    source: "FPK > Mannings > Competitor Analysis > Engagement"
+
+  - file: "competitor_growth"
+    label: "Follower Growth"
+    description: "Follower growth trends vs competitors"
+    source: "FPK > Mannings > Competitor Analysis > Growth"

@@ -1,0 +1,409 @@
+/* Mannings Social Dashboard — Custom Styles */
+
+[x-cloak] { display: none !important; }
+
+/* Chat prose */
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  font-weight: 600;
+  margin-top: 0.5em;
+  margin-bottom: 0.25em;
+}
+.prose-chat h1 { font-size: 1em; }
+.prose-chat h2 { font-size: 0.95em; }
+.prose-chat h3 { font-size: 0.9em; }
+.prose-chat ul, .prose-chat ol {
+  padding-left: 1.2em;
+  margin: 0.25em 0;
+}
+.prose-chat li { margin: 0.1em 0; }
+.prose-chat strong { font-weight: 600; }
+.prose-chat code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(0,0,0,0.06);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+.prose-chat p { margin: 0.3em 0; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E4E4E7; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #D4D4D8; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD TABLES — fixed layout, truncation, hover tooltip
+   ═══════════════════════════════════════════════════════════════ */
+
+.dash-table {
+  table-layout: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dash-table th,
+.dash-table td {
+  padding: 6px 16px;
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+/* Body cells: no wrapping, full text visible, horizontal scroll via wrapper */
+.dash-table td {
+  white-space: nowrap;
+  padding: 6px 16px;
+}
+
+/* Header row */
+.dash-table thead th {
+  background: #EEF1FE;
+  color: #18181B;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid #E4E4E7;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* Body rows */
+.dash-table tbody tr {
+  border-bottom: 1px solid #F0F0F3;
+  transition: background-color 0.1s;
+}
+.dash-table tbody tr:hover {
+  background: #FAFAFA;
+}
+
+/* Numeric alignment */
+.dash-table .num {
+  text-align: right;
+}
+
+/* Grand total / footer rows */
+.dash-table tfoot td,
+.dash-table tfoot th {
+  background: #F0F4FF;
+  color: #18181B;
+  font-weight: 700;
+  border-top: 2px solid #D6E4F0;
+}
+
+/* Table container — allow horizontal scroll for wide tables */
+.dash-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SENTIMENT COMBO TABLE (matching dash-table style)
+   ═══════════════════════════════════════════════════════════════ */
+
+.sentiment-combo-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.sentiment-combo-table th,
+.sentiment-combo-table td {
+  padding: 6px 4px;
+  line-height: 1.4;
+  border: 1px solid #F0F0F3;
+}
+
+.sentiment-combo-table thead th {
+  background: #EEF1FE;
+  color: #18181B;
+  font-weight: 600;
+  text-align: center;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.sentiment-combo-table tbody th {
+  text-align: left;
+  font-weight: 600;
+  color: #18181B;
+}
+
+.sentiment-combo-table tbody td {
+  text-align: center;
+  color: #52525B;
+}
+
+.sentiment-combo-table tfoot td,
+.sentiment-combo-table tfoot th {
+  background: #F0F4FF;
+  color: #18181B;
+  font-weight: 700;
+  text-align: center;
+  border-top: 2px solid #D6E4F0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KPI CARDS — centered, full-width
+   ═══════════════════════════════════════════════════════════════ */
+
+.kpi-card {
+  text-align: center;
+  padding: 16px 12px;
+}
+
+.kpi-card .kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #5B73E8;
+  line-height: 1.2;
+}
+
+.kpi-card .kpi-label {
+  font-size: 12px;
+  color: #A1A1AA;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5B73E8;
+  background: #EEF1FE;
+  border: 1px solid #E4E4E7;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.export-btn:hover {
+  background: #5B73E8;
+  color: white;
+  border-color: #5B73E8;
+}
+
+.table-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #F0F0F3;
+}
+
+.table-header-bar h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181B;
+}
+
+.table-header-bar .table-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.table-header-bar .table-meta {
+  font-size: 11px;
+  color: #A1A1AA;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT — A4 Landscape
+   ═══════════════════════════════════════════════════════════════ */
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  html, body {
+    font-size: 9px !important;
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .bg-white {
+    box-shadow: none !important;
+    border: 1px solid #e4e4e7 !important;
+    page-break-inside: avoid;
+    margin-bottom: 8px;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .max-w-\[1200px\] {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  /* Tables: keep truncation in print (same as screen) */
+  .dash-table-wrap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dash-table,
+  .sentiment-combo-table {
+    font-size: 8px !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  .dash-table th,
+  .dash-table td,
+  .sentiment-combo-table td {
+    padding: 3px 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Combo table headers: wrap text in print, keep column widths */
+  .sentiment-combo-table thead th {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.2 !important;
+  }
+
+  .dash-table thead th {
+    position: static !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  .animate-pulse {
+    display: none !important;
+  }
+
+  [style*="height"] {
+    page-break-inside: avoid;
+  }
+
+  /* Keep chart + table together */
+  .chart-table-combo {
+    page-break-inside: avoid;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION HEADER (Community, Competitor Analysis, etc.)
+   ═══════════════════════════════════════════════════════════════ */
+
+.section-header {
+  font-size: 16px;
+  font-weight: 700;
+  color: #18181B;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #5B73E8;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NARROW TABLE (Key Metrics — 2 columns, not full width)
+   ═══════════════════════════════════════════════════════════════ */
+
+.narrow-table-wrap {
+  width: auto;
+  max-width: 500px;
+  max-height: none !important;
+  overflow-y: visible !important;
+  padding-left: 16px;
+}
+
+.narrow-table-wrap .dash-table {
+  table-layout: auto;
+  width: auto;
+}
+
+.narrow-table-wrap .dash-table th,
+.narrow-table-wrap .dash-table td {
+  white-space: nowrap;
+  padding-left: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI INSIGHTS BUTTON + PANEL
+   ═══════════════════════════════════════════════════════════════ */
+
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #7C3AED;
+  background: #F3E8FF;
+  border: 1px solid #DDD6FE;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-btn:hover {
+  background: #7C3AED;
+  color: white;
+  border-color: #7C3AED;
+}
+.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-insights-panel {
+  padding: 12px 16px;
+  background: #FAF5FF;
+  border-top: 1px solid #EDE9FE;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ai-insights-panel .prose-chat {
+  font-size: 12px;
+}

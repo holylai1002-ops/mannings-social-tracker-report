@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ page_title }} — Mannings{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans TC"', '"PingFang TC"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            primary: { DEFAULT: '#5B73E8', hover: '#4A60D4', soft: '#EEF1FE' },
+            ink: { DEFAULT: '#18181B', muted: '#52525B', subtle: '#A1A1AA' },
+            surface: { DEFAULT: '#FFFFFF', muted: '#FAFAFA' },
+            line: { DEFAULT: '#F0F0F3', strong: '#E4E4E7' },
+            danger: { DEFAULT: '#f87171', soft: '#FEF2F2' },
+            success: { DEFAULT: '#4ade80', soft: '#F0FDF4' },
+            warning: { DEFAULT: '#fbbf24', soft: '#FFFBEB' },
+          },
+          boxShadow: {
+            soft: '0 1px 3px rgba(0,0,0,0.02)',
+            'soft-hover': '0 4px 16px rgba(0,0,0,0.035)',
+            pop: '0 20px 60px rgba(24,24,27,0.10)',
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.12/dist/htmx.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="/static/css/app.css?v=10" />
+</head>
+<body class="font-sans bg-surface-muted text-ink antialiased min-h-screen"
+      x-data="dashboard({ year: {{ year }}, month: {{ month }}, page: '{{ page }}' })">
+
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-[200px] shrink-0 bg-white flex flex-col sticky top-0 h-screen border-r border-line no-print">
+      <div class="p-4 pb-2">
+        <div class="text-lg font-bold text-ink">Mannings</div>
+        <div class="text-xs text-ink-subtle">Social Dashboard</div>
+      </div>
+
+      <!-- Period Selector -->
+      <div class="px-3 py-2">
+        <label class="text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">Period</label>
+        <div class="mt-1 flex gap-1">
+          <select x-model="selectedYear" @change="onPeriodChange()"
+                  class="w-full text-xs border border-line-strong rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-primary">
+            <template x-for="y in years" :key="y">
+              <option :value="y" x-text="y"></option>
+            </template>
+          </select>
+          <select x-model="selectedMonth" @change="onPeriodChange()"
+                  class="w-full text-xs border border-line-strong rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-primary">
+            <template x-for="m in monthsForYear" :key="m[0]">
+              <option :value="m[0]" x-text="m[1]"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+
+      <nav class="flex-1 px-3 pt-2 flex flex-col gap-0.5">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-ink-subtle mb-1">Navigation</div>
+        <a href="/" :class="page==='fb_page' ? 'bg-primary-soft text-primary font-semibold' : 'text-ink-muted hover:bg-surface-muted'"
+           class="px-3 py-2 rounded-lg text-sm transition-colors">FB Page</a>
+        <a href="/fb-posts" :class="page==='fb_posts' ? 'bg-primary-soft text-primary font-semibold' : 'text-ink-muted hover:bg-surface-muted'"
+           class="px-3 py-2 rounded-lg text-sm transition-colors">FB Posts</a>
+        <a href="/instagram" :class="page==='instagram' ? 'bg-primary-soft text-primary font-semibold' : 'text-ink-muted hover:bg-surface-muted'"
+           class="px-3 py-2 rounded-lg text-sm transition-colors">Instagram</a>
+      </nav>
+
+      <div class="p-3 border-t border-line">
+        <button @click="openChat()" class="w-full px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 3v-3z"/></svg>
+          AI Chatbot
+        </button>
+        <button @click="printPDF()" class="mt-2 w-full px-3 py-2 rounded-lg border border-line-strong text-ink-muted text-sm hover:bg-surface-muted transition-colors">
+          Print / PDF (A4)
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0">
+      <div class="max-w-[1200px] mx-auto px-8 py-8">
+        <!-- Page Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-ink" x-text="pageTitles[page] || 'Dashboard'"></h1>
+            <p class="text-sm text-ink-subtle mt-0.5" x-text="periodLabel"></p>
+          </div>
+        </div>
+
+        <!-- Dynamic Content -->
+        <div id="dashboard-content">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Floating Chat Box (bottom-right) -->
+  <div x-show="chatOpen" x-cloak class="fixed bottom-4 right-4 z-50 no-print w-[420px] h-[550px] bg-white rounded-2xl shadow-pop flex flex-col overflow-hidden"
+       style="display:none;"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+       x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+       x-transition:leave-end="opacity-0 translate-y-4 scale-95">
+      <!-- Chat Header -->
+      <div class="px-5 py-3 border-b border-line flex items-center justify-between bg-primary">
+        <div>
+          <h3 class="font-semibold text-white text-sm">AI Analytics Assistant</h3>
+          <p class="text-xs text-white/70" x-text="periodLabel"></p>
+        </div>
+        <button @click="chatOpen=false" class="text-white/70 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Chat Messages -->
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4" x-ref="chatMessages">
+        <template x-for="(msg, i) in chatHistory" :key="i">
+          <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+            <div :class="msg.role === 'user'
+              ? 'bg-primary text-white rounded-2xl rounded-br-sm'
+              : 'bg-surface-muted text-ink rounded-2xl rounded-bl-sm'"
+              class="max-w-[85%] px-4 py-3 text-sm leading-relaxed prose-chat"
+              x-html="msg.html"></div>
+          </div>
+        </template>
+        <div x-show="chatStreaming" class="flex justify-start">
+          <div class="bg-surface-muted rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-ink-subtle">
+            <span class="inline-flex gap-1">
+              <span class="w-2 h-2 bg-ink-subtle rounded-full animate-bounce" style="animation-delay:0ms"></span>
+              <span class="w-2 h-2 bg-ink-subtle rounded-full animate-bounce" style="animation-delay:150ms"></span>
+              <span class="w-2 h-2 bg-ink-subtle rounded-full animate-bounce" style="animation-delay:300ms"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Suggested Prompts -->
+      <div x-show="chatHistory.length === 0 && !chatStreaming" class="px-5 pb-2">
+        <div class="text-xs text-ink-subtle mb-2">Try asking:</div>
+        <div class="flex flex-wrap gap-2">
+          <template x-for="prompt in suggestedPrompts" :key="prompt">
+            <button @click="sendPrompt(prompt)"
+              class="text-xs px-3 py-1.5 rounded-full border border-line-strong text-ink-muted hover:bg-primary-soft hover:text-primary hover:border-primary transition-colors"
+              x-text="prompt"></button>
+          </template>
+        </div>
+      </div>
+      <!-- Chat Input -->
+      <div class="px-5 py-3 border-t border-line">
+        <div class="flex gap-2">
+          <input x-model="chatInput" @keydown.enter="sendMessage()"
+                 type="text" placeholder="Ask about this period's data..."
+                 class="flex-1 border border-line-strong rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-primary" />
+          <button @click="sendMessage()" :disabled="chatStreaming"
+                  class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover disabled:opacity-50 transition-colors">
+            Send
+          </button>
+        </div>
+      </div>
+  </div>
+
+  <script src="/static/js/dashboard.js?v=10"></script>
+  <script src="/static/js/charts.js?v=10"></script>
+</body>
+</html>

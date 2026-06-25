@@ -1,0 +1,79 @@
+# ── Secrets / Env ──
+.env
+.env.local
+*.key
+*.json
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# ── Temp / Lock files ──
+~$*
+~*.tmp
+*.tmp
+*.wrl
+
+# ── Old Streamlit scripts (root only) ──
+/1a_new_v2.py
+/1a_new_period_v2.py
+/1b_new_v2.py
+/1b_new_period_v2.py
+/2a_new_v2.py
+/2a_new_period_v2.py
+/2b_new_v2.py
+/2b_chart_period_v2.py
+/3a_new_v2.py
+/3a_v4_period.py
+/3_new_v2.py
+/3_v4_period.py
+/3b_new_v2.py
+/3b_v4_period.py
+/app.py
+/app_v3.py
+/app_v3.1.py
+/app_v3.2.py
+/master_pipeline.py
+/utils.py
+/config.py
+
+# ── Old data / intermediate files (root only) ──
+/FB_POST_Processed_*.xlsx
+/IG_POST_Processed_*.xlsx
+/IG_STORY_Processed_*.xlsx
+/Mannings_Comments_*.xlsx
+/Mannings_Social Tracker_*.xlsx
+/Mannings_FB_IG_Dashboard_Summary*.xlsx
+/Mannings_FB_IG_Dashboard_Feed_v3.xlsx
+/ig_api_data.json
+/Dashboard definition.xlsx
+
+# ── Documents / Media (not needed for deployment) ──
+*.docx
+*.mp4
+
+# Keep company logos in competitors folder
+!competitors/**/*.png
+!competitors/**/*.jpg
+
+# ── Folders not needed ──
+/Archive/
+/26Jan/
+/FB raw/
+/IG raw/
+
+# ── OS / IDE ──
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Deployment artifacts (root only) ──
+/start_dashboard.bat
+/requirements.txt
+/requirements_app.txt

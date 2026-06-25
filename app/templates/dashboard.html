@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="gap-3 mb-6" id="kpi-strip"
+     :style="'display:grid;grid-template-columns:repeat(' + Math.max(kpis.length, 1) + ',minmax(0,1fr));'">
+  <template x-for="kpi in kpis" :key="kpi.label">
+    <div class="bg-white rounded-xl border border-line shadow-soft kpi-card">
+      <div class="kpi-value" x-text="kpi.value"></div>
+      <div class="kpi-label" x-text="kpi.label"></div>
+    </div>
+  </template>
+  <div x-show="kpis.length === 0" :style="'grid-column: 1 / -1;'">
+    <div class="bg-white rounded-xl border border-line shadow-soft animate-pulse h-[88px]"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FB PAGE
+     ═══════════════════════════════════════════════════════════════ -->
+<template x-if="page === 'fb_page'">
+  <div class="space-y-6">
+
+    <!-- ══ Community ══ -->
+    <h2 class="section-header">Community</h2>
+
+    <!-- Total Comments by Sentiment (centered) -->
+    <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="sentimentDist.length > 0">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-ink">Total Comments by Sentiment</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportToExcel(sentimentDist.map(d => ({Sentiment: d.name, Count: d.value})), 'sentiment_dist_' + year + '_' + month + '.xlsx', 'Sentiment')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-sentiment-donut')">AI</button>
+        </div>
+      </div>
+      <div class="flex justify-center">
+        <div id="chart-sentiment-donut" style="height:320px; width:100%; max-width:500px;"></div>
+      </div>
+      <div x-show="insightsText['chart-sentiment-donut'] || insightsLoading['chart-sentiment-donut']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-sentiment-donut']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-sentiment-donut']"></div>
+      </div>
+    </div>
+
+    <!-- Sentiment by Category (full width) -->
+    <div x-show="sentimentByCategory.length > 0" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-ink">Sentiment by Category</h3>
+        <div class="flex gap-2 no-print">
+          <button class="ai-btn" @click="getInsights('chart-sentiment-category')">AI</button>
+        </div>
+      </div>
+      <div id="chart-sentiment-category" style="height:400px;"></div>
+      <div x-show="insightsText['chart-sentiment-category'] || insightsLoading['chart-sentiment-category']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-sentiment-category']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-sentiment-category']"></div>
+      </div>
+    </div>
+
+    <!-- Sentiment by Type (full width) -->
+    <div x-show="sentimentByType.length > 0" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-ink">Sentiment by Type</h3>
+        <div class="flex gap-2 no-print">
+          <button class="ai-btn" @click="getInsights('chart-sentiment-type')">AI</button>
+        </div>
+      </div>
+      <div id="chart-sentiment-type" style="height:400px;"></div>
+      <div x-show="insightsText['chart-sentiment-type'] || insightsLoading['chart-sentiment-type']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-sentiment-type']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-sentiment-type']"></div>
+      </div>
+    </div>
+
+    <!-- FB Key Metrics Table (narrow) -->
+    <div x-show="fbKeyMetrics.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>FB Key Metrics</h3>
+        <div class="table-actions no-print">
+          <button class="export-btn" @click="exportToExcel(fbKeyMetrics, 'fb_key_metrics_' + year + '_' + month + '.xlsx', 'FB Key Metrics')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-fb-key-metrics')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap narrow-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(fbKeyMetrics[0] || {})" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in fbKeyMetrics" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(fbKeyMetrics[0] || {})" :key="key">
+                  <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-fb-key-metrics'] || insightsLoading['tbl-fb-key-metrics']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-fb-key-metrics']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-fb-key-metrics']"></div>
+      </div>
+    </div>
+
+    <!-- ══ Competitor Analysis ══ -->
+    <h2 class="section-header">Competitor Analysis</h2>
+
+    <!-- FPK: Competitor Fans Growth Trend — Line Chart -->
+    <div x-show="fpkGrowthTrend" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Competitor Fans Growth Trend</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportGrowthTrend()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-growth')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-growth" style="height:380px;"></div>
+      <div x-show="insightsText['chart-fpk-growth'] || insightsLoading['chart-fpk-growth']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-growth']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-growth']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: KPI Comparison — Bubble Chart -->
+    <div x-show="fpkKpiComparison" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Key Performance Indexes Comparison</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportKpiComparison()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-bubble')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-bubble" style="height:400px;"></div>
+      <div x-show="insightsText['chart-fpk-bubble'] || insightsLoading['chart-fpk-bubble']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-bubble']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-bubble']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: Competitors Overview — Table -->
+    <div x-show="fpkCompetitorsOverview.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>Competitors Overview</h3>
+        <div class="table-actions no-print">
+          <button class="export-btn" @click="exportToExcel(fpkCompetitorsOverview.filter(r => {delete r.key; delete r.color; delete r.logo; return true}), 'competitors_overview_' + year + '_' + month + '.xlsx', 'Overview')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-fpk-overview')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(fpkCompetitorsOverview[0] || {}).filter(k => k !== 'key' && k !== 'color' && k !== 'logo')" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in fpkCompetitorsOverview" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(fpkCompetitorsOverview[0] || {}).filter(k => k !== 'key' && k !== 'color' && k !== 'logo')" :key="key">
+                  <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-fpk-overview'] || insightsLoading['tbl-fpk-overview']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-fpk-overview']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-fpk-overview']"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FB POSTS
+     ═══════════════════════════════════════════════════════════════ -->
+<template x-if="page === 'fb_posts'">
+  <div class="space-y-6">
+    <!-- Donut Charts -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Posts by Pillar</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportToExcel(pillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'fb_posts_by_pillar_' + year + '_' + month + '.xlsx', 'Posts by Pillar')">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-pillar-donut')">AI</button>
+          </div>
+        </div>
+        <div id="chart-pillar-donut" style="height:300px;"></div>
+        <div x-show="insightsText['chart-pillar-donut'] || insightsLoading['chart-pillar-donut']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-pillar-donut']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-pillar-donut']"></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Posts by Type</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportToExcel(typeDonut.map(d => ({Type: d.name, Posts: d.value})), 'fb_posts_by_type_' + year + '_' + month + '.xlsx', 'Posts by Type')">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-type-donut')">AI</button>
+          </div>
+        </div>
+        <div id="chart-type-donut" style="height:300px;"></div>
+        <div x-show="insightsText['chart-type-donut'] || insightsLoading['chart-type-donut']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-type-donut']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-type-donut']"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pillar Interactions Bar -->
+    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Interactions by Pillar</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportToExcel(pillarInteractions.map(d => ({Pillar: d.name, Interactions: d.value})), 'pillar_interactions_' + year + '_' + month + '.xlsx', 'Pillar')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-pillar-bar')">AI</button>
+        </div>
+      </div>
+      <div id="chart-pillar-bar" style="height:350px;"></div>
+      <div x-show="insightsText['chart-pillar-bar'] || insightsLoading['chart-pillar-bar']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-pillar-bar']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-pillar-bar']"></div>
+      </div>
+    </div>
+
+    <!-- Category Interactions Bar -->
+    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Interactions by Category</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportToExcel(catInteractions.map(d => ({Category: d.name, Interactions: d.value})), 'cat_interactions_' + year + '_' + month + '.xlsx', 'Category')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-category-bar')">AI</button>
+        </div>
+      </div>
+      <div id="chart-category-bar" style="height:350px;"></div>
+      <div x-show="insightsText['chart-category-bar'] || insightsLoading['chart-category-bar']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-category-bar']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-category-bar']"></div>
+      </div>
+    </div>
+
+    <!-- FB Wall Post Performance -->
+    <div x-show="wallPosts.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>FB Wall Post Performance</h3>
+        <div class="table-actions no-print">
+          <span class="table-meta" x-text="wallPosts.length + ' rows'"></span>
+          <button class="export-btn" @click="exportToExcel(wallPosts, 'fb_wall_posts_' + year + '_' + month + '.xlsx', 'Wall Posts')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-fb-wall-posts')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="col in wallPostCols" :key="col">
+                <th @click="sortWall(col)" class="cursor-pointer hover:text-primary select-none" x-text="col"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in sortedWallPosts" :key="i">
+              <tr>
+                <template x-for="col in wallPostCols" :key="col">
+                  <td :title="formatCell(row[col])" x-text="formatCell(row[col])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-fb-wall-posts'] || insightsLoading['tbl-fb-wall-posts']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-fb-wall-posts']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-fb-wall-posts']"></div>
+      </div>
+    </div>
+
+    <!-- Breakdown Sheets -->
+    <template x-for="(data, name) in breakdowns" :key="name">
+      <div class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+        <div class="table-header-bar">
+          <h3 x-text="name"></h3>
+          <div class="table-actions no-print">
+            <span class="table-meta">
+              <strong x-text="data.count"></strong> Posts ·
+              <strong x-text="data.reach.toLocaleString()"></strong> Reach ·
+              <strong x-text="data.interactions.toLocaleString()"></strong> Int.
+            </span>
+            <button class="export-btn" @click="exportToExcel(data.records, name.replace(/[^a-zA-Z0-9_]/g, '_') + '_' + year + '_' + month + '.xlsx', name.substring(0, 31))">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+        <div class="dash-table-wrap" style="max-height:400px;">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <template x-for="key in Object.keys(data.records[0] || {})" :key="key">
+                  <th x-text="key"></th>
+                </template>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(row, i) in data.records" :key="i">
+                <tr>
+                  <template x-for="key in Object.keys(data.records[0] || {})" :key="key">
+                    <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                  </template>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     INSTAGRAM
+     ═══════════════════════════════════════════════════════════════ -->
+<template x-if="page === 'instagram'">
+  <div class="space-y-6">
+
+    <!-- IG Key Metrics Table (narrow) -->
+    <div x-show="igKeyMetrics.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>IG Key Metrics</h3>
+        <div class="table-actions no-print">
+          <button class="export-btn" @click="exportToExcel(igKeyMetrics, 'ig_key_metrics_' + year + '_' + month + '.xlsx', 'IG Key Metrics')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-ig-key-metrics')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap narrow-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(igKeyMetrics[0] || {})" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in igKeyMetrics" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(igKeyMetrics[0] || {})" :key="key">
+                  <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-ig-key-metrics'] || insightsLoading['tbl-ig-key-metrics']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-ig-key-metrics']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-ig-key-metrics']"></div>
+      </div>
+    </div>
+
+    <!-- IG Charts Row 1: Posts by Pillar | Interactions by Pillar | Story Link Clicks -->
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="igPillarDonut.length > 0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Posts by Pillar</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportToExcel(igPillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'ig_posts_by_pillar_' + year + '_' + month + '.xlsx', 'Posts by Pillar')">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-ig-pillar-donut')">AI</button>
+          </div>
+        </div>
+        <div id="chart-ig-pillar-donut" style="height:300px;"></div>
+        <div x-show="insightsText['chart-ig-pillar-donut'] || insightsLoading['chart-ig-pillar-donut']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-ig-pillar-donut']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-ig-pillar-donut']"></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="igPillarInteractions.length > 0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Interactions by Pillar</h3>
+          <div class="flex gap-2 no-print">
+            <button class="ai-btn" @click="getInsights('chart-ig-pillar-bar')">AI</button>
+          </div>
+        </div>
+        <div id="chart-ig-pillar-bar" style="height:300px;"></div>
+        <div x-show="insightsText['chart-ig-pillar-bar'] || insightsLoading['chart-ig-pillar-bar']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-ig-pillar-bar']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-ig-pillar-bar']"></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="igStoryClicks.length > 0">
+        <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+          <h3 class="text-sm font-semibold text-ink">Story Link Clicks</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportToExcel(igStoryClicks.map(d => ({Pillar: d.name, Clicks: d.value})), 'ig_story_clicks_' + year + '_' + month + '.xlsx', 'Story Clicks')">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-ig-story-clicks')">AI</button>
+          </div>
+        </div>
+        <div id="chart-ig-story-clicks" style="height:300px;"></div>
+        <div x-show="insightsText['chart-ig-story-clicks'] || insightsLoading['chart-ig-story-clicks']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-ig-story-clicks']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-ig-story-clicks']"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IG Charts Row 2: Wall Post Engagement | Stories by Category -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="igEngagementDonut.length > 0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Wall Post Engagement</h3>
+          <div class="flex gap-2 no-print">
+            <button class="ai-btn" @click="getInsights('chart-ig-engagement')">AI</button>
+          </div>
+        </div>
+        <div id="chart-ig-engagement" style="height:300px;"></div>
+        <div x-show="insightsText['chart-ig-engagement'] || insightsLoading['chart-ig-engagement']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-ig-engagement']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-ig-engagement']"></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-line p-6 shadow-soft" x-show="igStoryCatDonut.length > 0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Stories by Category</h3>
+          <div class="flex gap-2 no-print">
+            <button class="ai-btn" @click="getInsights('chart-ig-story-cat')">AI</button>
+          </div>
+        </div>
+        <div id="chart-ig-story-cat" style="height:300px;"></div>
+        <div x-show="insightsText['chart-ig-story-cat'] || insightsLoading['chart-ig-story-cat']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-ig-story-cat']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-ig-story-cat']"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IG Wall Posts Table -->
+    <div x-show="igWallPosts.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>IG Wall Posts</h3>
+        <div class="table-actions no-print">
+          <span class="table-meta" x-text="igWallPosts.length + ' rows'"></span>
+          <button class="export-btn" @click="exportToExcel(igWallPosts, 'ig_wall_posts_' + year + '_' + month + '.xlsx', 'IG Wall Posts')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-ig-wall-posts')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap" style="max-height:400px;">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(igWallPosts[0] || {})" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in igWallPosts" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(igWallPosts[0] || {})" :key="key">
+                  <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-ig-wall-posts'] || insightsLoading['tbl-ig-wall-posts']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-ig-wall-posts']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-ig-wall-posts']"></div>
+      </div>
+    </div>
+
+    <!-- ══ Competitor Analysis ══ -->
+    <h2 class="section-header">Competitor Analysis</h2>
+
+    <!-- FPK: Competitor Fans Growth Trend — Line Chart -->
+    <div x-show="fpkGrowthTrend" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Competitor Fans Growth Trend</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportGrowthTrend()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-growth')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-growth" style="height:380px;"></div>
+      <div x-show="insightsText['chart-fpk-growth'] || insightsLoading['chart-fpk-growth']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-growth']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-growth']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: KPI Comparison — Bubble Chart -->
+    <div x-show="fpkKpiComparison" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Key Performance Indexes Comparison</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportKpiComparison()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-bubble')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-bubble" style="height:400px;"></div>
+      <div x-show="insightsText['chart-fpk-bubble'] || insightsLoading['chart-fpk-bubble']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-bubble']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-bubble']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: Competitors Overview — Table -->
+    <div x-show="fpkCompetitorsOverview.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>Competitors Overview</h3>
+        <div class="table-actions no-print">
+          <button class="export-btn" @click="exportToExcel(fpkCompetitorsOverview, 'ig_competitors_overview_' + year + '_' + month + '.xlsx', 'Overview')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('tbl-fpk-overview')">AI</button>
+        </div>
+      </div>
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(fpkCompetitorsOverview[0] || {}).filter(k => k !== 'key' && k !== 'color' && k !== 'logo')" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in fpkCompetitorsOverview" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(fpkCompetitorsOverview[0] || {}).filter(k => k !== 'key' && k !== 'color' && k !== 'logo')" :key="key">
+                  <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-show="insightsText['tbl-fpk-overview'] || insightsLoading['tbl-fpk-overview']" x-cloak class="ai-insights-panel">
+        <div x-show="insightsLoading['tbl-fpk-overview']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['tbl-fpk-overview']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: Top 50 Words — Tag Cloud -->
+    <div x-show="fpkTopWords.length > 0" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Top 50 Words: Post Interaction Rate</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportTopWords()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-words')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-words" style="height:450px; overflow:hidden;"></div>
+      <div x-show="insightsText['chart-fpk-words'] || insightsLoading['chart-fpk-words']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-words']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-words']"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Loading state -->
+<div x-show="loading" x-cloak class="space-y-4">
+  <div class="bg-white rounded-xl border border-line p-6 shadow-soft animate-pulse h-32"></div>
+  <div class="bg-white rounded-xl border border-line p-6 shadow-soft animate-pulse h-64"></div>
+</div>
+
+{% endblock %}
