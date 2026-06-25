@@ -85,13 +85,7 @@ def _get_excel_file(path: str) -> pd.ExcelFile:
 
 
 def get_excel_for_period(year: int, month: int) -> pd.ExcelFile:
-    base = Path(settings.excel_path)
-    period_file = base.parent / f"Mannings_FB_IG_Dashboard_Feed_{year}_{month:02d}.xlsx"
-    if period_file.exists():
-        return _get_excel_file(str(period_file))
-    if base.exists():
-        return _get_excel_file(str(base))
-    raise FileNotFoundError(f"No Excel file found for {year}-{month:02d}")
+    return _get_excel_file(settings.excel_path)
 
 
 def _filter_by_date(df: pd.DataFrame, year: int, month: int, date_col: str) -> pd.DataFrame:
@@ -139,11 +133,6 @@ def get_period_data(year: int, month: int) -> PeriodData:
     period_str = f"{year}-{month:02d}"
     pd_obj = PeriodData(year=year, month=month, period_str=period_str)
 
-    # If a period-specific file exists, it is already pre-filtered — skip date/period filtering
-    base = Path(settings.excel_path)
-    period_file = base.parent / f"Mannings_FB_IG_Dashboard_Feed_{year}_{month:02d}.xlsx"
-    is_period_file = period_file.exists()
-
     sheet_map = {
         "FB Wall Post Performance": ("date", "Publish time"),
         "FB Pivot (Category)": ("period", None),
@@ -173,9 +162,7 @@ def get_period_data(year: int, month: int) -> PeriodData:
             continue
         try:
             raw = pd.read_excel(xl, sheet_name)
-            if is_period_file:
-                filtered = raw
-            elif filter_type == "date" and date_col:
+            if filter_type == "date" and date_col:
                 filtered = _filter_by_date(raw, year, month, date_col)
             elif filter_type == "period":
                 filtered = _filter_by_period(raw, year, month)
@@ -209,19 +196,10 @@ def get_available_periods() -> list[tuple[int, int]]:
 
 
 def default_period() -> tuple[int, int]:
-    base = Path(settings.excel_path)
     periods = get_available_periods()
-    # Prefer the latest period that has a complete period-specific file
-    for y, m in reversed(periods):
-        period_file = base.parent / f"Mannings_FB_IG_Dashboard_Feed_{y}_{m:02d}.xlsx"
-        if period_file.exists():
-            return y, m
-    # Fallback to last month
+    if periods:
+        return periods[-1]
     today = date.today()
     default_year = today.year if today.month > 1 else today.year - 1
     default_month = today.month - 1 if today.month > 1 else 12
-    if (default_year, default_month) in periods:
-        return default_year, default_month
-    if periods:
-        return periods[-1]
     return default_year, default_month
