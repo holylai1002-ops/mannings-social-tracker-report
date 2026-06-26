@@ -169,6 +169,8 @@ function renderBarChart(containerId, data, yLabel) {
       axisLabel: {
         rotate: data.length > 5 ? 30 : 0,
         fontSize: 10,
+        color: '#6E6F75',
+        fontWeight: 450,
         interval: 0,
       },
       axisLine: { lineStyle: { color: '#E4E4E7' } },
@@ -177,6 +179,8 @@ function renderBarChart(containerId, data, yLabel) {
       type: 'value',
       axisLabel: {
         fontSize: 10,
+        color: '#6E6F75',
+        fontWeight: 450,
         formatter: function(val) {
           if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
           return val;
@@ -197,10 +201,11 @@ function renderBarChart(containerId, data, yLabel) {
         show: true,
         position: 'top',
         formatter: function(p) {
-          return p.value >= 1000 ? (p.value / 1000).toFixed(1) + 'k' : p.value;
+          return p.value.toLocaleString();
         },
         fontSize: 10,
-        color: '#52525B',
+        fontWeight: 600,
+        color: '#18181B',
       },
     }],
   });
@@ -269,7 +274,7 @@ function renderSentimentDashboard(containerId, data, groupKey) {
     },
     yAxis: {
       type: 'value',
-      axisLabel: { fontSize: 10 },
+      axisLabel: { fontSize: 10, color: '#6E6F75', fontWeight: 450 },
       splitLine: { lineStyle: { color: '#F0F0F3', type: 'dashed' } },
       axisLine: { show: false },
       axisTick: { show: false },
@@ -425,12 +430,14 @@ function renderFollowersGrowth(containerId, data) {
       axisLabel: {
         rotate: 45,
         fontSize: 9,
+        color: '#6E6F75',
+        fontWeight: 450,
         interval: Math.floor(xLabels.length / 12),
       },
     },
     yAxis: {
       type: 'value',
-      axisLabel: { fontSize: 10 },
+      axisLabel: { fontSize: 10, color: '#6E6F75', fontWeight: 450 },
       splitLine: { lineStyle: { color: '#F0F0F3' } },
     },
     series: [
@@ -503,6 +510,8 @@ function renderTotalReach(containerId, data) {
       axisLabel: {
         rotate: 45,
         fontSize: 9,
+        color: '#6E6F75',
+        fontWeight: 450,
         interval: Math.floor(xLabels.length / 12),
       },
     },
@@ -510,6 +519,8 @@ function renderTotalReach(containerId, data) {
       type: 'value',
       axisLabel: {
         fontSize: 10,
+        color: '#6E6F75',
+        fontWeight: 450,
         formatter: function(v) { return fmtM(v); },
       },
       splitLine: { lineStyle: { color: '#F0F0F3' } },
@@ -585,6 +596,108 @@ function renderReachFunnel(containerId, data) {
   });
 }
 
+/* ── IG Followers Growth — Dual Line (Total + Net) ── */
+function renderIgFollowers(containerId, data) {
+  var chart = getChart(containerId);
+  if (!chart || !data || !data.dates || data.dates.length === 0) return;
+
+  var xLabels = data.dates.map(function(d) { return fmtDate(d); });
+  var hasTotal = data.total && data.total.length > 0;
+
+  var yAxis = [{
+    type: 'value',
+    name: 'Total',
+    nameTextStyle: { fontSize: 10, color: '#6E6F75' },
+    position: 'left',
+    axisLabel: { fontSize: 10, color: '#6E6F75', fontWeight: 450 },
+    splitLine: { lineStyle: { color: '#F0F0F3' } },
+  }, {
+    type: 'value',
+    name: 'Net',
+    nameTextStyle: { fontSize: 10, color: '#6E6F75' },
+    position: 'right',
+    max: 1000,
+    axisLabel: { fontSize: 10, color: '#6E6F75', fontWeight: 450 },
+    splitLine: { show: false },
+  }];
+
+  var series = [];
+  if (hasTotal) {
+    series.push({
+      name: 'Total Followers',
+      type: 'line',
+      yAxisIndex: 0,
+      data: data.total,
+      itemStyle: { color: '#FE8301' },
+      lineStyle: { color: '#FE8301', width: 2.5 },
+      symbol: 'circle',
+      symbolSize: 3,
+      smooth: true,
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(254, 131, 1, 0.2)' },
+            { offset: 1, color: 'rgba(254, 131, 1, 0.02)' },
+          ],
+        },
+      },
+    });
+  }
+  series.push({
+    name: 'Net',
+    type: 'line',
+    yAxisIndex: 1,
+    data: data.net,
+    itemStyle: { color: '#5B73E8' },
+    lineStyle: { color: '#5B73E8', width: 2 },
+    symbol: 'circle',
+    symbolSize: 3,
+    smooth: true,
+  });
+
+  chart.setOption({
+    title: {
+      text: data.monthly_net.toLocaleString(),
+      right: 10,
+      top: 4,
+      textStyle: { fontSize: 13, fontWeight: 'bold', color: '#5B73E8' },
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      formatter: function(params) {
+        var html = '<b>' + params[0].axisValue + '</b>';
+        params.forEach(function(p) {
+          html += '<br/><span style="color:' + p.color + '">&#9679;</span> ' + p.seriesName + ': ' + p.value.toLocaleString();
+        });
+        return html;
+      },
+    },
+    legend: {
+      bottom: 0,
+      textStyle: { fontSize: 10 },
+      itemWidth: 12,
+      itemHeight: 8,
+    },
+    grid: { left: 60, right: 60, top: 40, bottom: 60 },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: xLabels,
+      axisLabel: {
+        rotate: 45,
+        fontSize: 9,
+        color: '#6E6F75',
+        fontWeight: 450,
+        interval: Math.floor(xLabels.length / 12),
+      },
+    },
+    yAxis: yAxis,
+    series: series,
+  });
+}
+
 /* ── Competitor Fans Growth Trend — Line Chart ── */
 function renderGrowthTrendChart(containerId, data) {
   var chart = getChart(containerId);
@@ -605,12 +718,14 @@ function renderGrowthTrendChart(containerId, data) {
       type: 'category',
       boundaryGap: false,
       data: xLabels,
-      axisLabel: { rotate: 45, fontSize: 9, interval: Math.floor(xLabels.length / 10) },
+      axisLabel: { rotate: 45, fontSize: 9, color: '#6E6F75', fontWeight: 450, interval: Math.floor(xLabels.length / 10) },
     },
     yAxis: {
       type: 'value',
       axisLabel: {
         fontSize: 10,
+        color: '#6E6F75',
+        fontWeight: 450,
         formatter: function(v) { return v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v; },
       },
       splitLine: { lineStyle: { color: '#F0F0F3' } },
@@ -646,15 +761,18 @@ function renderKpiBubbleChart(containerId, data) {
       name: 'Number of Posts',
       nameLocation: 'middle',
       nameGap: 35,
-      nameTextStyle: { fontSize: 11 },
+      nameTextStyle: { fontSize: 11, color: '#6E6F75', fontWeight: 450 },
+      axisLabel: { color: '#6E6F75', fontWeight: 450 },
     },
     yAxis: {
       type: 'value',
       name: 'Reactions, Comments & Shares',
       nameLocation: 'middle',
       nameGap: 60,
-      nameTextStyle: { fontSize: 11 },
+      nameTextStyle: { fontSize: 11, color: '#6E6F75', fontWeight: 450 },
       axisLabel: {
+        color: '#6E6F75',
+        fontWeight: 450,
         formatter: function(v) { return v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v; },
       },
     },

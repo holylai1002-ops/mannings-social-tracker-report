@@ -91,7 +91,7 @@ def get_excel_for_period(year: int, month: int) -> pd.ExcelFile:
 def _filter_by_date(df: pd.DataFrame, year: int, month: int, date_col: str) -> pd.DataFrame:
     if df.empty or date_col not in df.columns:
         return pd.DataFrame()
-    pt = pd.to_datetime(df[date_col], errors="coerce", dayfirst=True)
+    pt = pd.to_datetime(df[date_col], errors="coerce")
     return df[(pt.dt.year == year) & (pt.dt.month == month)].copy()
 
 
@@ -153,19 +153,22 @@ def get_period_data(year: int, month: int) -> PeriodData:
     pd_obj = PeriodData(year=year, month=month, period_str=period_str)
 
     sheet_map = {
-        "FB Wall Post Performance": ("date", "Publish time"),
+        "FB Wall Post Performance": ("period", None),
         "FB Pivot (Category)": ("period", None),
         "FB Pivot (Post Type)": ("period", None),
         "FB Pivot (Pillar)": ("period", None),
         "FB Key Metrics": ("raw", None),
-        "Category Performance - BAU": ("date", "Publish time"),
-        "Sub-Category Performance - PNP": ("date", "Publish time"),
-        "Pillar Performance - CRM": ("date", "Publish time"),
-        "Pillar Performance - Ecommerce": ("date", "Publish time"),
-        "Pillar Performance - GNC": ("date", "Publish time"),
-        "Pillar Performance - Others": ("date", "Publish time"),
-        "IG Wall Post Performance": ("date", "Post Date"),
-        "IG Story Performance": ("date", "Publish time"),
+        "Category Performance - BAU": ("period", None),
+        "Sub-Category Performance - PNP": ("period", None),
+        "Pillar Performance - CRM": ("period", None),
+        "Pillar Performance - Ecommerce": ("period", None),
+        "Pillar Performance - GNC": ("period", None),
+        "Pillar Performance - Branding": ("period", None),
+        "Pillar Performance - Category": ("period", None),
+        "Pillar Performance - Sales": ("period", None),
+        "Pillar Performance - Others": ("period", None),
+        "IG Wall Post Performance": ("period", None),
+        "IG Story Performance": ("period", None),
         "IG Pivot (Pillar)": ("period", None),
         "IG Story Pivot": ("period", None),
         "IG Key Metrics": ("raw", None),
@@ -175,8 +178,11 @@ def get_period_data(year: int, month: int) -> PeriodData:
         "Sentiment Summary (Category)": ("period", None),
         "Sentiment Summary (Type)": ("period", None),
         "Followers": ("api_date", None),
+        "FB Followers": ("api_date", None),
+        "IG Followers": ("api_date", None),
         "Unique Page View": ("api_date", None),
         "Reach Funnel": ("reach_funnel", None),
+        "FB Reach Funnel": ("reach_funnel", None),
     }
 
     for sheet_name, (filter_type, date_col) in sheet_map.items():
@@ -223,9 +229,13 @@ def get_available_periods() -> list[tuple[int, int]]:
 
 def default_period() -> tuple[int, int]:
     periods = get_available_periods()
-    if periods:
-        return periods[-1]
     today = date.today()
-    default_year = today.year if today.month > 1 else today.year - 1
-    default_month = today.month - 1 if today.month > 1 else 12
-    return default_year, default_month
+    if today.month > 1:
+        lm_year, lm_month = today.year, today.month - 1
+    else:
+        lm_year, lm_month = today.year - 1, 12
+    if periods:
+        if (lm_year, lm_month) in periods:
+            return (lm_year, lm_month)
+        return periods[-1]
+    return lm_year, lm_month

@@ -24,7 +24,7 @@
     <!-- ══ Fans Acquisition ══ -->
     <h2 class="section-header">Fans Acquisition</h2>
 
-    <!-- Followers Growth — Combined Bar + Line -->
+    <!-- FB Followers Growth — Combined Bar + Line -->
     <div x-show="followersGrowth" class="bg-white rounded-xl border border-line p-6 shadow-soft">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-semibold text-ink">Followers Growth</h3>
@@ -182,44 +182,6 @@
     <!-- ══ Competitor Analysis ══ -->
     <h2 class="section-header">Competitor Analysis</h2>
 
-    <!-- FPK: Competitor Fans Growth Trend — Line Chart -->
-    <div x-show="fpkGrowthTrend" class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
-        <h3 class="text-sm font-semibold text-ink">Competitor Fans Growth Trend</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportGrowthTrend()">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-fpk-growth')">AI</button>
-        </div>
-      </div>
-      <div id="chart-fpk-growth" style="height:380px;"></div>
-      <div x-show="insightsText['chart-fpk-growth'] || insightsLoading['chart-fpk-growth']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-fpk-growth']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-fpk-growth']"></div>
-      </div>
-    </div>
-
-    <!-- FPK: KPI Comparison — Bubble Chart -->
-    <div x-show="fpkKpiComparison" class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
-        <h3 class="text-sm font-semibold text-ink">Key Performance Indexes Comparison</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportKpiComparison()">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-fpk-bubble')">AI</button>
-        </div>
-      </div>
-      <div id="chart-fpk-bubble" style="height:400px;"></div>
-      <div x-show="insightsText['chart-fpk-bubble'] || insightsLoading['chart-fpk-bubble']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-fpk-bubble']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-fpk-bubble']"></div>
-      </div>
-    </div>
-
     <!-- FPK: Competitors Overview — Table -->
     <div x-show="fpkCompetitorsOverview.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
       <div class="table-header-bar">
@@ -255,6 +217,44 @@
       <div x-show="insightsText['tbl-fpk-overview'] || insightsLoading['tbl-fpk-overview']" x-cloak class="ai-insights-panel">
         <div x-show="insightsLoading['tbl-fpk-overview']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
         <div class="prose-chat" x-html="insightsHtml['tbl-fpk-overview']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: Competitor Fans Growth Trend — Line Chart -->
+    <div x-show="fpkGrowthTrend" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Competitor Fans Growth Trend</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportGrowthTrend()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-growth')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-growth" style="height:380px;"></div>
+      <div x-show="insightsText['chart-fpk-growth'] || insightsLoading['chart-fpk-growth']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-growth']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-growth']"></div>
+      </div>
+    </div>
+
+    <!-- FPK: KPI Comparison — Bubble Chart -->
+    <div x-show="fpkKpiComparison" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
+        <h3 class="text-sm font-semibold text-ink">Key Performance Indexes Comparison</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportKpiComparison()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-fpk-bubble')">AI</button>
+        </div>
+      </div>
+      <div id="chart-fpk-bubble" style="height:400px;"></div>
+      <div x-show="insightsText['chart-fpk-bubble'] || insightsLoading['chart-fpk-bubble']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-fpk-bubble']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-fpk-bubble']"></div>
       </div>
     </div>
   </div>
@@ -367,7 +367,7 @@
             <template x-for="(row, i) in sortedWallPosts" :key="i">
               <tr>
                 <template x-for="col in wallPostCols" :key="col">
-                  <td :title="formatCell(row[col])" x-text="formatCell(row[col])"></td>
+                  <td :class="cellClass(col)" :title="formatCell(row[col])" x-text="formatCell(row[col])"></td>
                 </template>
               </tr>
             </template>
@@ -410,7 +410,7 @@
               <template x-for="(row, i) in data.records" :key="i">
                 <tr>
                   <template x-for="key in Object.keys(data.records[0] || {})" :key="key">
-                    <td :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                    <td :class="cellClass(key)" :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
                   </template>
                 </tr>
               </template>
@@ -427,6 +427,25 @@
      ═══════════════════════════════════════════════════════════════ -->
 <template x-if="page === 'instagram'">
   <div class="space-y-6">
+
+    <!-- IG Followers Growth — Line Chart -->
+    <div x-show="igFollowers" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-ink">IG Followers Growth</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportIgFollowers()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-ig-followers')">AI</button>
+        </div>
+      </div>
+      <div id="chart-ig-followers" style="height:380px;"></div>
+      <div x-show="insightsText['chart-ig-followers'] || insightsLoading['chart-ig-followers']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-ig-followers']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-ig-followers']"></div>
+      </div>
+    </div>
 
     <!-- IG Key Metrics Table (narrow) -->
     <div x-show="igKeyMetrics.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
@@ -583,6 +602,40 @@
       <div x-show="insightsText['tbl-ig-wall-posts'] || insightsLoading['tbl-ig-wall-posts']" x-cloak class="ai-insights-panel">
         <div x-show="insightsLoading['tbl-ig-wall-posts']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
         <div class="prose-chat" x-html="insightsHtml['tbl-ig-wall-posts']"></div>
+      </div>
+    </div>
+
+    <!-- IG Story Performance Table -->
+    <div x-show="igStoryPosts.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
+      <div class="table-header-bar">
+        <h3>IG Story</h3>
+        <div class="table-actions no-print">
+          <span class="table-meta" x-text="igStoryPosts.length + ' rows'"></span>
+          <button class="export-btn" @click="exportToExcel(igStoryPosts, 'ig_story_' + year + '_' + month + '.xlsx', 'IG Story')">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="dash-table-wrap" style="max-height:400px;">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <template x-for="key in Object.keys(igStoryPosts[0] || {})" :key="key">
+                <th x-text="key"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in igStoryPosts" :key="i">
+              <tr>
+                <template x-for="key in Object.keys(igStoryPosts[0] || {})" :key="key">
+                  <td :class="cellClass(key)" :title="formatCell(row[key])" x-text="formatCell(row[key])"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
       </div>
     </div>
 

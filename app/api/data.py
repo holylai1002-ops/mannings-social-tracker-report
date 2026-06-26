@@ -99,16 +99,19 @@ def _filter_key_metrics(df: pd.DataFrame, period_str: str) -> pd.DataFrame:
 
 def _api_followers_growth(pd_obj) -> dict | None:
     """Extract daily followers growth data for the selected period."""
-    df = pd_obj.get("Followers")
+    df = pd_obj.get("FB Followers")
     if df.empty or "Date" not in df.columns:
         return None
     dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
-    net_total = int(pd.to_numeric(df["Net"], errors="coerce").fillna(0).sum())
+    gain_col = "Followers Gain" if "Followers Gain" in df.columns else "Gain"
+    loss_col = "Followers Loss" if "Followers Loss" in df.columns else "Loss"
+    net_col = "Followers Net" if "Followers Net" in df.columns else "Net"
+    net_total = int(pd.to_numeric(df[net_col], errors="coerce").fillna(0).sum())
     return {
         "dates": dates.dt.strftime("%d/%m/%Y").tolist(),
-        "gain": [int(x) for x in pd.to_numeric(df["Gain"], errors="coerce").fillna(0)],
-        "loss": [int(x) for x in pd.to_numeric(df["Loss"], errors="coerce").fillna(0)],
-        "net": [int(x) for x in pd.to_numeric(df["Net"], errors="coerce").fillna(0)],
+        "gain": [int(x) for x in pd.to_numeric(df[gain_col], errors="coerce").fillna(0)],
+        "loss": [int(x) for x in pd.to_numeric(df[loss_col], errors="coerce").fillna(0)],
+        "net": [int(x) for x in pd.to_numeric(df[net_col], errors="coerce").fillna(0)],
         "monthly_net": net_total,
     }
 
@@ -119,7 +122,8 @@ def _api_total_reach(pd_obj) -> dict | None:
     if df.empty or "Date" not in df.columns:
         return None
     dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
-    reach_vals = pd.to_numeric(df["Total Reach"], errors="coerce").fillna(0).astype(int)
+    reach_col = "Unique Page View" if "Unique Page View" in df.columns else "Total Reach"
+    reach_vals = pd.to_numeric(df[reach_col], errors="coerce").fillna(0).astype(int)
     monthly_total = int(reach_vals.sum())
     return {
         "dates": dates.dt.strftime("%d/%m/%Y").tolist(),
@@ -130,8 +134,10 @@ def _api_total_reach(pd_obj) -> dict | None:
 
 def _api_reach_funnel(pd_obj) -> dict | None:
     """Extract organic vs paid reach totals for the selected period."""
-    df = pd_obj.get("Reach Funnel")
-    if df.empty:
+    df = pd_obj.get("FB Reach Funnel")
+    if df is None:
+        df = pd_obj.get("Reach Funnel")
+    if df is None or df.empty:
         return None
     organic = int(pd.to_numeric(df["Organic reach"], errors="coerce").fillna(0).sum())
     paid = int(pd.to_numeric(df["Paid reach"], errors="coerce").fillna(0).sum())
@@ -139,6 +145,25 @@ def _api_reach_funnel(pd_obj) -> dict | None:
         "organic": organic,
         "paid": paid,
         "total": organic + paid,
+    }
+
+
+def _api_ig_followers(pd_obj) -> dict | None:
+    """Extract daily IG followers data for the selected period."""
+    df = pd_obj.get("IG Followers")
+    if df.empty or "Date" not in df.columns:
+        return None
+    dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
+    net_col = "Followers Net" if "Followers Net" in df.columns else "Net"
+    net_vals = pd.to_numeric(df[net_col], errors="coerce").fillna(0).astype(int)
+    monthly_net = int(net_vals.sum())
+    total_col = "Total Followers" if "Total Followers" in df.columns else None
+    total_vals = pd.to_numeric(df[total_col], errors="coerce").fillna(0).astype(int).tolist() if total_col else []
+    return {
+        "dates": dates.dt.strftime("%d/%m/%Y").tolist(),
+        "net": net_vals.tolist(),
+        "monthly_net": monthly_net,
+        "total": total_vals,
     }
 
 
@@ -248,6 +273,7 @@ def api_fb_page(year: int = 0, month: int = 0):
         "followers_growth": _api_followers_growth(pd_obj),
         "total_reach": _api_total_reach(pd_obj),
         "reach_funnel": _api_reach_funnel(pd_obj),
+        "ig_followers": _api_ig_followers(pd_obj),
     }
 
 
@@ -284,7 +310,11 @@ def api_fb_posts(year: int = 0, month: int = 0):
     breakdown_sheets = [
         "Category Performance - BAU", "Sub-Category Performance - PNP",
         "Pillar Performance - CRM", "Pillar Performance - Ecommerce",
-        "Pillar Performance - GNC", "Pillar Performance - Others",
+        "Pillar Performance - GNC",
+        "Pillar Performance - Branding",
+        "Pillar Performance - Category",
+        "Pillar Performance - Sales",
+        "Pillar Performance - Others",
     ]
     perf_cols = ["Permalink", "Description", "Post type", "Pillar", "Category", "Sub-Category",
                  "Campaign Name", "Publish time", "Reactions", "Comments", "Shares",
@@ -363,6 +393,8 @@ def api_instagram(year: int = 0, month: int = 0):
         "story_cat_donut": story_cat_donut,
         "story_clicks": story_clicks,
         "wall_posts": _df_to_records(ig_wall),
+        "ig_story_posts": _df_to_records(pd_obj.get("IG Story Performance")),
+        "ig_followers": _api_ig_followers(pd_obj),
     }
 
 

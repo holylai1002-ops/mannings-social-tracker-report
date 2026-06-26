@@ -50,10 +50,19 @@
   vertical-align: top;
 }
 
-/* Body cells: no wrapping, full text visible, horizontal scroll via wrapper */
+/* Body cells: no wrapping, ellipsis for overflow, horizontal scroll via wrapper */
 .dash-table td {
   white-space: nowrap;
-  padding: 6px 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 20px;
+  max-width: 375px;
+}
+
+/* Narrower defaults for long-text columns */
+.dash-table td.cell-permalink,
+.dash-table td.cell-description {
+  max-width: 250px;
 }
 
 /* Header row */
@@ -98,6 +107,33 @@
   overflow-x: auto;
   overflow-y: auto;
   max-height: 480px;
+}
+
+/* Permalink / Description: narrow by default with ellipsis */
+.dash-table td.cell-permalink,
+.dash-table td.cell-description {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Column resize handles */
+.dash-table th {
+  position: relative;
+}
+.dash-table th .col-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 2;
+}
+.dash-table th .col-resizer:hover {
+  background: #5B73E8;
 }
 
 /* ═══════════════════════════════════════════════════════════════

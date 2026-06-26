@@ -38,12 +38,14 @@ function dashboard(initial) {
     followersGrowth: null,
     totalReach: null,
     reachFunnel: null,
+    igFollowers: null,
     igPillarDonut: [],
     igPillarInteractions: [],
     igEngagementDonut: [],
     igStoryCatDonut: [],
     igStoryClicks: [],
     igWallPosts: [],
+    igStoryPosts: [],
 
     fpkGrowthTrend: null,
     fpkKpiComparison: null,
@@ -175,8 +177,10 @@ function dashboard(initial) {
       this.loading = false;
       this.$nextTick(() => {
         this.renderCharts();
+        this.initColumnResize();
         setTimeout(() => {
           this.renderCharts();
+          this.initColumnResize();
           Object.values(window.chartInstances || {}).forEach(function(c) {
             if (c && !c.isDisposed()) c.resize();
           });
@@ -237,12 +241,14 @@ function dashboard(initial) {
           this.wallPostCols = this.wallPosts.length > 0 ? Object.keys(this.wallPosts[0]) : [];
         } else if (this.page === 'instagram') {
           this.igKeyMetrics = data.ig_key_metrics || [];
+          this.igFollowers = data.ig_followers || null;
           this.igPillarDonut = data.pillar_donut || [];
           this.igPillarInteractions = this.sortByValue(data.pillar_interactions || []);
           this.igEngagementDonut = data.engagement_donut || [];
           this.igStoryCatDonut = data.story_cat_donut || [];
           this.igStoryClicks = this.sortByValue(data.story_clicks || []);
           this.igWallPosts = data.wall_posts || [];
+          this.igStoryPosts = data.ig_story_posts || [];
         }
       } catch (e) { console.error('Page data load error:', e); }
     },
@@ -294,6 +300,9 @@ function dashboard(initial) {
           renderBarChart('chart-category-bar', this.catInteractions, 'Interactions');
         }
       } else if (this.page === 'instagram') {
+        if (this.igFollowers) {
+          renderIgFollowers('chart-ig-followers', this.igFollowers);
+        }
         if (this.igPillarDonut.length > 0) {
           renderDonutGeneric('chart-ig-pillar-donut', this.igPillarDonut, 'Pillar');
         }
@@ -338,6 +347,63 @@ function dashboard(initial) {
       return String(val);
     },
 
+    cellClass(col) {
+      var c = String(col).toLowerCase();
+      if (c === 'permalink' || c === 'link') return 'cell-permalink';
+      if (c === 'description') return 'cell-description';
+      return '';
+    },
+
+    initColumnResize() {
+      var tables = document.querySelectorAll('.dash-table');
+      tables.forEach(function(table) {
+        var ths = table.querySelectorAll('thead th');
+        if (!ths || ths.length === 0) return;
+        if (table.dataset.colResizeInit === '1') return;
+        table.dataset.colResizeInit = '1';
+        table.style.tableLayout = 'fixed';
+
+        var measurer = document.createElement('span');
+        measurer.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:12px;font-weight:600;font-family:Inter,"Noto Sans TC",sans-serif;';
+        document.body.appendChild(measurer);
+
+        ths.forEach(function(th, idx) {
+          measurer.textContent = th.textContent || th.innerText || '';
+          var headerWidth = measurer.offsetWidth + 32;
+          th.style.width = headerWidth + 'px';
+
+          var handle = document.createElement('div');
+          handle.className = 'col-resizer';
+          th.appendChild(handle);
+
+          handle.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var startX = e.pageX;
+            var startW = th.offsetWidth;
+            var body = document.body;
+            body.style.cursor = 'col-resize';
+            body.style.userSelect = 'none';
+
+            function onMove(ev) {
+              var newW = Math.max(40, startW + (ev.pageX - startX));
+              th.style.width = newW + 'px';
+            }
+            function onUp() {
+              body.style.cursor = '';
+              body.style.userSelect = '';
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+        });
+
+        document.body.removeChild(measurer);
+      });
+    },
+
     fmt(val) {
       if (val === null || val === undefined || 0 === val) return '0';
       if (typeof val === 'number') return val.toLocaleString();
@@ -361,6 +427,7 @@ function dashboard(initial) {
         'chart-followers-growth': ['Followers Growth', 'bar-line', () => this.followersGrowth],
         'chart-total-reach': ['Total Reach', 'line', () => this.totalReach],
         'chart-reach-funnel': ['Organic Reach Funnel', 'funnel', () => this.reachFunnel],
+        'chart-ig-followers': ['IG Followers Growth', 'line', () => this.igFollowers],
         'chart-pillar-donut': ['Posts by Pillar', 'donut', () => this.pillarDonut],
         'chart-type-donut': ['Posts by Type', 'donut', () => this.typeDonut],
         'chart-pillar-bar': ['Interactions by Pillar', 'bar', () => this.pillarInteractions],
@@ -570,6 +637,15 @@ function dashboard(initial) {
         { Type: 'Paid Reach', Reach: d.paid },
         { Type: 'Total', Reach: d.total },
       ], 'reach_funnel_' + this.year + '_' + this.month + '.xlsx', 'Reach Funnel');
+    },
+
+    exportIgFollowers() {
+      if (!this.igFollowers) return;
+      var d = this.igFollowers;
+      var rows = d.dates.map(function(date, i) {
+        return { Date: date, 'Followers Net': d.net[i] };
+      });
+      this.exportToExcel(rows, 'ig_followers_' + this.year + '_' + this.month + '.xlsx', 'IG Followers');
     },
 
     exportKpiComparison() {
