@@ -21,6 +21,72 @@
 <template x-if="page === 'fb_page'">
   <div class="space-y-6">
 
+    <!-- ══ Fans Acquisition ══ -->
+    <h2 class="section-header">Fans Acquisition</h2>
+
+    <!-- Followers Growth — Combined Bar + Line -->
+    <div x-show="followersGrowth" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-ink">Followers Growth</h3>
+        <div class="flex gap-2 no-print">
+          <button class="export-btn" @click="exportFollowersGrowth()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
+          </button>
+          <button class="ai-btn" @click="getInsights('chart-followers-growth')">AI</button>
+        </div>
+      </div>
+      <div id="chart-followers-growth" style="height:380px;"></div>
+      <div x-show="insightsText['chart-followers-growth'] || insightsLoading['chart-followers-growth']" x-cloak class="ai-insights-panel mt-4">
+        <div x-show="insightsLoading['chart-followers-growth']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+        <div class="prose-chat" x-html="insightsHtml['chart-followers-growth']"></div>
+      </div>
+    </div>
+
+    <!-- ══ Overall Page Awareness ══ -->
+    <h2 class="section-header">Overall Page Awareness</h2>
+
+    <!-- Total Reach + Reach Funnel — Side by Side -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Total Reach — Line Chart -->
+      <div x-show="totalReach" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Total Reach</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportTotalReach()">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-total-reach')">AI</button>
+          </div>
+        </div>
+        <div id="chart-total-reach" style="height:380px;"></div>
+        <div x-show="insightsText['chart-total-reach'] || insightsLoading['chart-total-reach']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-total-reach']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-total-reach']"></div>
+        </div>
+      </div>
+
+      <!-- Organic Reach Funnel -->
+      <div x-show="reachFunnel" class="bg-white rounded-xl border border-line p-6 shadow-soft">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-ink">Organic Reach Funnel</h3>
+          <div class="flex gap-2 no-print">
+            <button class="export-btn" @click="exportReachFunnel()">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+            <button class="ai-btn" @click="getInsights('chart-reach-funnel')">AI</button>
+          </div>
+        </div>
+        <div id="chart-reach-funnel" style="height:380px;"></div>
+        <div x-show="insightsText['chart-reach-funnel'] || insightsLoading['chart-reach-funnel']" x-cloak class="ai-insights-panel mt-4">
+          <div x-show="insightsLoading['chart-reach-funnel']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
+          <div class="prose-chat" x-html="insightsHtml['chart-reach-funnel']"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ Community ══ -->
     <h2 class="section-header">Community</h2>
 
@@ -87,7 +153,7 @@
           <button class="ai-btn" @click="getInsights('tbl-fb-key-metrics')">AI</button>
         </div>
       </div>
-      <div class="dash-table-wrap narrow-table-wrap">
+      <div class="dash-table-wrap">
         <table class="dash-table">
           <thead>
             <tr>
@@ -374,7 +440,7 @@
           <button class="ai-btn" @click="getInsights('tbl-ig-key-metrics')">AI</button>
         </div>
       </div>
-      <div class="dash-table-wrap narrow-table-wrap">
+      <div class="dash-table-wrap">
         <table class="dash-table">
           <thead>
             <tr>

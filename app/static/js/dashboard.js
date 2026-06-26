@@ -35,6 +35,9 @@ function dashboard(initial) {
 
     fbKeyMetrics: [],
     igKeyMetrics: [],
+    followersGrowth: null,
+    totalReach: null,
+    reachFunnel: null,
     igPillarDonut: [],
     igPillarInteractions: [],
     igEngagementDonut: [],
@@ -221,6 +224,9 @@ function dashboard(initial) {
           this.sentimentByCategory = this.sortSentimentByTotal(data.sentiment_by_category || []);
           this.sentimentByType = this.sortSentimentByTotal(data.sentiment_by_type || []);
           this.fbKeyMetrics = data.fb_key_metrics || [];
+          this.followersGrowth = data.followers_growth || null;
+          this.totalReach = data.total_reach || null;
+          this.reachFunnel = data.reach_funnel || null;
         } else if (this.page === 'fb_posts') {
           this.pillarDonut = data.pillar_donut || [];
           this.typeDonut = data.type_donut || [];
@@ -264,6 +270,15 @@ function dashboard(initial) {
         }
         if (this.sentimentByType.length > 0) {
           renderSentimentDashboard('chart-sentiment-type', this.sentimentByType, 'type');
+        }
+        if (this.followersGrowth) {
+          renderFollowersGrowth('chart-followers-growth', this.followersGrowth);
+        }
+        if (this.totalReach) {
+          renderTotalReach('chart-total-reach', this.totalReach);
+        }
+        if (this.reachFunnel) {
+          renderReachFunnel('chart-reach-funnel', this.reachFunnel);
         }
       } else if (this.page === 'fb_posts') {
         if (this.pillarDonut.length > 0) {
@@ -343,6 +358,9 @@ function dashboard(initial) {
         'chart-sentiment-donut': ['Total Comments by Sentiment', 'donut', () => this.sentimentDist],
         'chart-sentiment-category': ['Sentiment by Category', 'bar-table', () => this.sentimentByCategory],
         'chart-sentiment-type': ['Sentiment by Type', 'bar-table', () => this.sentimentByType],
+        'chart-followers-growth': ['Followers Growth', 'bar-line', () => this.followersGrowth],
+        'chart-total-reach': ['Total Reach', 'line', () => this.totalReach],
+        'chart-reach-funnel': ['Organic Reach Funnel', 'funnel', () => this.reachFunnel],
         'chart-pillar-donut': ['Posts by Pillar', 'donut', () => this.pillarDonut],
         'chart-type-donut': ['Posts by Type', 'donut', () => this.typeDonut],
         'chart-pillar-bar': ['Interactions by Pillar', 'bar', () => this.pillarInteractions],
@@ -524,6 +542,34 @@ function dashboard(initial) {
         return row;
       });
       this.exportToExcel(rows, 'competitor_growth_trend_' + this.year + '_' + this.month + '.xlsx', 'Growth Trend');
+    },
+
+    exportFollowersGrowth() {
+      if (!this.followersGrowth) return;
+      var d = this.followersGrowth;
+      var rows = d.dates.map(function(date, i) {
+        return { Date: date, Gain: d.gain[i], Loss: d.loss[i], Net: d.net[i] };
+      });
+      this.exportToExcel(rows, 'followers_growth_' + this.year + '_' + this.month + '.xlsx', 'Followers Growth');
+    },
+
+    exportTotalReach() {
+      if (!this.totalReach) return;
+      var d = this.totalReach;
+      var rows = d.dates.map(function(date, i) {
+        return { Date: date, 'Total Reach': d.reach[i] };
+      });
+      this.exportToExcel(rows, 'total_reach_' + this.year + '_' + this.month + '.xlsx', 'Total Reach');
+    },
+
+    exportReachFunnel() {
+      if (!this.reachFunnel) return;
+      var d = this.reachFunnel;
+      this.exportToExcel([
+        { Type: 'Organic Reach', Reach: d.organic },
+        { Type: 'Paid Reach', Reach: d.paid },
+        { Type: 'Total', Reach: d.total },
+      ], 'reach_funnel_' + this.year + '_' + this.month + '.xlsx', 'Reach Funnel');
     },
 
     exportKpiComparison() {

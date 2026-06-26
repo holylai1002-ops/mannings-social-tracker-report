@@ -86,6 +86,62 @@ def _df_to_records(df: pd.DataFrame, max_rows: int = 500) -> list[dict]:
     return df.fillna("").to_dict(orient="records")
 
 
+def _filter_key_metrics(df: pd.DataFrame, period_str: str) -> pd.DataFrame:
+    """Keep only Metric + the selected period column from a Key Metrics sheet."""
+    if df.empty:
+        return df
+    keep = ["Metric", period_str]
+    available = [c for c in keep if c in df.columns]
+    if len(available) <= 1:
+        return df
+    return df[available]
+
+
+def _api_followers_growth(pd_obj) -> dict | None:
+    """Extract daily followers growth data for the selected period."""
+    df = pd_obj.get("Followers")
+    if df.empty or "Date" not in df.columns:
+        return None
+    dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
+    net_total = int(pd.to_numeric(df["Net"], errors="coerce").fillna(0).sum())
+    return {
+        "dates": dates.dt.strftime("%d/%m/%Y").tolist(),
+        "gain": [int(x) for x in pd.to_numeric(df["Gain"], errors="coerce").fillna(0)],
+        "loss": [int(x) for x in pd.to_numeric(df["Loss"], errors="coerce").fillna(0)],
+        "net": [int(x) for x in pd.to_numeric(df["Net"], errors="coerce").fillna(0)],
+        "monthly_net": net_total,
+    }
+
+
+def _api_total_reach(pd_obj) -> dict | None:
+    """Extract daily total reach data for the selected period."""
+    df = pd_obj.get("Unique Page View")
+    if df.empty or "Date" not in df.columns:
+        return None
+    dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
+    reach_vals = pd.to_numeric(df["Total Reach"], errors="coerce").fillna(0).astype(int)
+    monthly_total = int(reach_vals.sum())
+    return {
+        "dates": dates.dt.strftime("%d/%m/%Y").tolist(),
+        "reach": reach_vals.tolist(),
+        "monthly_total": monthly_total,
+    }
+
+
+def _api_reach_funnel(pd_obj) -> dict | None:
+    """Extract organic vs paid reach totals for the selected period."""
+    df = pd_obj.get("Reach Funnel")
+    if df.empty:
+        return None
+    organic = int(pd.to_numeric(df["Organic reach"], errors="coerce").fillna(0).sum())
+    paid = int(pd.to_numeric(df["Paid reach"], errors="coerce").fillna(0).sum())
+    return {
+        "organic": organic,
+        "paid": paid,
+        "total": organic + paid,
+    }
+
+
 def _parse_fpk_xlsx(filepath: Path) -> list[dict]:
     """Parse a FPK XLSX export: skip 4 metadata rows, drop link/image columns."""
     with warnings.catch_warnings():
@@ -177,8 +233,9 @@ def api_fb_page(year: int = 0, month: int = 0):
                     "Negative": int(row.get("Negative", 0)),
                 })
 
-    # FB Key Metrics — full table
+    # FB Key Metrics — filtered to selected period column
     fb_key = pd_obj.get("FB Key Metrics")
+    fb_key = _filter_key_metrics(fb_key, pd_obj.period_str)
     fb_key_metrics = _df_to_records(fb_key)
 
     return {
@@ -188,6 +245,9 @@ def api_fb_page(year: int = 0, month: int = 0):
         "sentiment_by_category": sentiment_by_cat,
         "sentiment_by_type": sentiment_by_type,
         "fb_key_metrics": fb_key_metrics,
+        "followers_growth": _api_followers_growth(pd_obj),
+        "total_reach": _api_total_reach(pd_obj),
+        "reach_funnel": _api_reach_funnel(pd_obj),
     }
 
 
@@ -259,14 +319,15 @@ def api_instagram(year: int = 0, month: int = 0):
         year, month = default_period()
     pd_obj = get_period_data(year, month)
 
-    ig_key = pd_obj.get("IG Key Metrics")
+    # IG Key Metrics — filtered to selected period column
+    ig_key = _filter_key_metrics(pd_obj.get("IG Key Metrics"), pd_obj.period_str)
     ig_pivot = pd_obj.get("IG Pivot (Pillar)")
     ig_story_pivot = pd_obj.get("IG Story Pivot")
     ig_eng = pd_obj.get("IG Engagement Pivot")
     ig_story_cat = pd_obj.get("IG Story Category Pivot")
     ig_wall = pd_obj.get("IG Wall Post Performance")
 
-    # IG Key Metrics — full table
+    # IG Key Metrics — filtered to selected period column
     ig_key_metrics = _df_to_records(ig_key)
 
     ig_pillar_donut = []

@@ -118,6 +118,25 @@ def _filter_comments(df: pd.DataFrame, year: int, month: int) -> pd.DataFrame:
     return df
 
 
+def _filter_api_date(df: pd.DataFrame, year: int, month: int) -> pd.DataFrame:
+    """Filter API-sourced tabs (dd/mm/yyyy Date column)."""
+    if df.empty or "Date" not in df.columns:
+        return pd.DataFrame()
+    dates = pd.to_datetime(df["Date"], format="%d/%m/%Y", errors="coerce")
+    mask = (dates.dt.year == year) & (dates.dt.month == month)
+    return df[mask].copy()
+
+
+def _filter_reach_funnel(df: pd.DataFrame, year: int, month: int) -> pd.DataFrame:
+    """Filter Reach Funnel tab by Year and Month No. columns."""
+    if df.empty or "Year" not in df.columns or "Month No." not in df.columns:
+        return pd.DataFrame()
+    yr = pd.to_numeric(df["Year"], errors="coerce")
+    mo = pd.to_numeric(df["Month No."], errors="coerce")
+    mask = (yr == year) & (mo == month)
+    return df[mask].copy()
+
+
 _PERIOD_CACHE: dict[str, tuple[float, PeriodData]] = {}
 _CACHE_TTL = 300
 
@@ -155,6 +174,9 @@ def get_period_data(year: int, month: int) -> PeriodData:
         "Master Comments Base": ("comments", None),
         "Sentiment Summary (Category)": ("period", None),
         "Sentiment Summary (Type)": ("period", None),
+        "Followers": ("api_date", None),
+        "Unique Page View": ("api_date", None),
+        "Reach Funnel": ("reach_funnel", None),
     }
 
     for sheet_name, (filter_type, date_col) in sheet_map.items():
@@ -168,6 +190,10 @@ def get_period_data(year: int, month: int) -> PeriodData:
                 filtered = _filter_by_period(raw, year, month)
             elif filter_type == "comments":
                 filtered = _filter_comments(raw, year, month)
+            elif filter_type == "api_date":
+                filtered = _filter_api_date(raw, year, month)
+            elif filter_type == "reach_funnel":
+                filtered = _filter_reach_funnel(raw, year, month)
             else:
                 filtered = raw
             pd_obj.sheets[sheet_name] = filtered

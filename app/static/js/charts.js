@@ -356,10 +356,241 @@ function renderSentimentDashboard(containerId, data, groupKey) {
   chartEl.parentNode.insertBefore(wrap, chartEl.nextSibling);
 }
 
+/* ── Date formatter: converts various date formats to "d Mmm yy" ── */
+function fmtDate(d) {
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dt;
+  if (d instanceof Date) {
+    dt = d;
+  } else {
+    var s = String(d).trim();
+    // dd/mm/yyyy
+    var m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    // yyyy-mm-dd
+    var m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m1) {
+      dt = new Date(parseInt(m1[3]), parseInt(m1[2]) - 1, parseInt(m1[1]));
+    } else if (m2) {
+      dt = new Date(parseInt(m2[1]), parseInt(m2[2]) - 1, parseInt(m2[3]));
+    } else {
+      dt = new Date(s);
+    }
+  }
+  if (isNaN(dt)) return s;
+  return dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + String(dt.getFullYear()).slice(2);
+}
+
+/* ── Followers Growth — Combined Bar + Line ──
+ * Gain (faded green bars), Loss (faded red bars) side by side
+ * Net (purple line) centered on bar pair
+ */
+function renderFollowersGrowth(containerId, data) {
+  var chart = getChart(containerId);
+  if (!chart || !data || !data.dates || data.dates.length === 0) return;
+
+  var xLabels = data.dates.map(function(d) { return fmtDate(d); });
+
+  chart.setOption({
+    title: {
+      text: data.monthly_net.toLocaleString(),
+      right: 10,
+      top: 4,
+      textStyle: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: data.monthly_net >= 0 ? '#5B73E8' : '#E53935',
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      formatter: function(params) {
+        var html = '<b>' + params[0].axisValue + '</b>';
+        params.forEach(function(p) {
+          html += '<br/><span style="color:' + p.color + '">&#9679;</span> ' + p.seriesName + ': ' + p.value.toLocaleString();
+        });
+        return html;
+      },
+    },
+    legend: {
+      bottom: 0,
+      textStyle: { fontSize: 10 },
+      itemWidth: 12,
+      itemHeight: 8,
+    },
+    grid: { left: 60, right: 30, top: 40, bottom: 60 },
+    xAxis: {
+      type: 'category',
+      data: xLabels,
+      axisLabel: {
+        rotate: 45,
+        fontSize: 9,
+        interval: Math.floor(xLabels.length / 12),
+      },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 10 },
+      splitLine: { lineStyle: { color: '#F0F0F3' } },
+    },
+    series: [
+      {
+        name: 'Gain',
+        type: 'bar',
+        data: data.gain,
+        itemStyle: { color: 'rgba(76, 175, 80, 0.55)' },
+        barGap: '-100%',
+        barCategoryGap: '60%',
+      },
+      {
+        name: 'Loss',
+        type: 'bar',
+        data: data.loss,
+        itemStyle: { color: 'rgba(244, 67, 54, 0.55)' },
+      },
+      {
+        name: 'Net',
+        type: 'line',
+        data: data.net,
+        itemStyle: { color: '#5B73E8' },
+        lineStyle: { color: '#5B73E8', width: 2 },
+        symbol: 'circle',
+        symbolSize: 3,
+        smooth: true,
+      },
+    ],
+  });
+}
+
+/* ── Total Reach — Line Chart ──
+ * Orange line (Mannings color), values in millions.
+ */
+function renderTotalReach(containerId, data) {
+  var chart = getChart(containerId);
+  if (!chart || !data || !data.dates || data.dates.length === 0) return;
+
+  function fmtM(v) {
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' M';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'k';
+    return v;
+  }
+
+  var xLabels = data.dates.map(function(d) { return fmtDate(d); });
+
+  chart.setOption({
+    title: {
+      text: data.monthly_total.toLocaleString(),
+      right: 10,
+      top: 4,
+      textStyle: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#FE8301',
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      formatter: function(params) {
+        var p = params[0];
+        return '<b>' + p.axisValue + '</b><br/>Total Reach: ' + p.value.toLocaleString();
+      },
+    },
+    grid: { left: 60, right: 30, top: 40, bottom: 60 },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: xLabels,
+      axisLabel: {
+        rotate: 45,
+        fontSize: 9,
+        interval: Math.floor(xLabels.length / 12),
+      },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        fontSize: 10,
+        formatter: function(v) { return fmtM(v); },
+      },
+      splitLine: { lineStyle: { color: '#F0F0F3' } },
+    },
+    series: [{
+      name: 'Total Reach',
+      type: 'line',
+      data: data.reach,
+      itemStyle: { color: '#FE8301' },
+      lineStyle: { color: '#FE8301', width: 2.5 },
+      symbol: 'circle',
+      symbolSize: 3,
+      smooth: true,
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(254, 131, 1, 0.2)' },
+            { offset: 1, color: 'rgba(254, 131, 1, 0.02)' },
+          ],
+        },
+      },
+    }],
+  });
+}
+
+/* ── Organic Reach Funnel ──
+ * Organic (orange, top), Paid (green, bottom)
+ */
+function renderReachFunnel(containerId, data) {
+  var chart = getChart(containerId);
+  if (!chart || !data || !data.total) return;
+
+  function fmtM(v) {
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + ' M';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'k';
+    return v;
+  }
+
+  var organicPct = data.total > 0 ? (data.organic / data.total * 100) : 0;
+  var paidPct = 100 - organicPct;
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: '<b>{b}</b><br/>Reach: {c}',
+    },
+    series: [{
+      type: 'funnel',
+      left: '10%',
+      right: '10%',
+      top: 10,
+      bottom: 10,
+      minSize: '15%',
+      maxSize: '100%',
+      gap: 2,
+      label: {
+        show: true,
+        position: 'inside',
+        formatter: function(p) {
+          return p.name + '\n' + fmtM(p.value);
+        },
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#fff',
+      },
+      data: [
+        { value: data.organic, name: 'Organic Reach', itemStyle: { color: '#FE8301' } },
+        { value: data.paid, name: 'Paid Reach', itemStyle: { color: '#43A047' } },
+      ],
+    }],
+  });
+}
+
 /* ── Competitor Fans Growth Trend — Line Chart ── */
 function renderGrowthTrendChart(containerId, data) {
   var chart = getChart(containerId);
   if (!chart || !data || !data.series || data.series.length === 0) return;
+
+  var xLabels = data.dates.map(function(d) { return fmtDate(d); });
 
   chart.setOption({
     tooltip: { trigger: 'axis' },
@@ -373,8 +604,8 @@ function renderGrowthTrendChart(containerId, data) {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.dates,
-      axisLabel: { rotate: 45, fontSize: 9, interval: Math.floor(data.dates.length / 10) },
+      data: xLabels,
+      axisLabel: { rotate: 45, fontSize: 9, interval: Math.floor(xLabels.length / 10) },
     },
     yAxis: {
       type: 'value',
