@@ -1,0 +1,57 @@
+.git
+.env
+.venv
+venv
+__pycache__
+*.pyc
+opencode.json
+opencode.jsonc
+.opencode
+
+# Temp / lock files
+~$*
+~WRL*.tmp
+*.tmp
+
+# Raw data (not needed at runtime)
+Archive/
+FB raw/
+IG raw/
+LinkedIn raw/
+*.xls
+All_*.xlsx
+FB Comments*.xlsx
+Mannings_API_raw.xlsx
+Mannings_FB_IG_Dashboard_Feed_2*.xlsx
+Mannings_FB_IG_Dashboard_Feed_v*.xlsx
+Dashboard definition.xlsx
+
+# Pipeline scripts
+1a_new*.py
+1b_new*.py
+2a_new*.py
+2b_new*.py
+3_new*.py
+3_v*.py
+linkedin_pipeline.py
+config.py
+utils.py
+
+# Old versions
+app.py
+app_v3*.py
+app_v2/
+
+# Media
+*.mp4
+*.png
+
+# Misc
+*.bat
+.github/
+scripts/
+call apps.txt
+meta_*.txt
+requirements.txt
+requirements_app.txt
+README.md

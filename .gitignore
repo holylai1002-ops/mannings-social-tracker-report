@@ -1,79 +1,74 @@
-# ── Secrets / Env ──
-.env
-.env.local
-*.key
-*.json
-
-# ── Python ──
 __pycache__/
 *.pyc
 *.pyo
-*.egg-info/
-.pytest_cache/
+.env
 .venv/
 venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+opencode.json
+opencode.jsonc
+.opencode/
 
-# ── Temp / Lock files ──
+# Temp / lock files
 ~$*
-~*.tmp
+~WRL*.tmp
 *.tmp
-*.wrl
 
-# ── Old Streamlit scripts (root only) ──
-/1a_new_v2.py
-/1a_new_period_v2.py
-/1b_new_v2.py
-/1b_new_period_v2.py
-/2a_new_v2.py
-/2a_new_period_v2.py
-/2b_new_v2.py
-/2b_chart_period_v2.py
-/3a_new_v2.py
-/3a_v4_period.py
-/3_new_v2.py
-/3_v4_period.py
-/3b_new_v2.py
-/3b_v4_period.py
-/app.py
-/app_v3.py
-/app_v3.1.py
-/app_v3.2.py
-/master_pipeline.py
-/utils.py
-/config.py
+# All xlsx files EXCEPT the feed and competitor data
+*.xlsx
+!Mannings_FB_IG_Dashboard_Feed.xlsx
+!competitors/**/*.xlsx
 
-# ── Old data / intermediate files (root only) ──
-/FB_POST_Processed_*.xlsx
-/IG_POST_Processed_*.xlsx
-/IG_STORY_Processed_*.xlsx
-/Mannings_Comments_*.xlsx
-/Mannings_Social Tracker_*.xlsx
-/Mannings_FB_IG_Dashboard_Summary*.xlsx
-/Mannings_FB_IG_Dashboard_Feed_v3.xlsx
-/ig_api_data.json
-/Dashboard definition.xlsx
+# xls files
+*.xls
 
-# ── Documents / Media (not needed for deployment) ──
-*.docx
+# Raw data sources
+Archive/
+FB raw/
+IG raw/
+LinkedIn raw/
+
+# JSON data
+Mannings_*.json
+Mannings API daily log.json
+
+# Pipeline scripts (not needed for deployment)
+1a_new*.py
+1b_new*.py
+2a_new*.py
+2b_new*.py
+3_new*.py
+3_v*.py
+linkedin_pipeline.py
+
+# Old versions
+app.py
+app_v3*.py
+
+# Media
 *.mp4
+*.png
 
-# Keep company logos in competitors folder
-!competitors/**/*.png
-!competitors/**/*.jpg
+# Local batch files
+*.bat
 
-# ── Folders not needed ──
-/Archive/
-/26Jan/
-/FB raw/
-/IG raw/
+# CI/CD (HF-specific, not for Koyeb)
+.github/
 
-# ── OS / IDE ──
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+# Scripts (dev/test only)
+scripts/
 
-# ── Deployment artifacts (root only) ──
-/start_dashboard.bat
-/requirements.txt
-/requirements_app.txt
+# Docs/specs
+*.docx
+call apps.txt
+meta_*.txt
+
+# Requirements for local (use requirements_deploy.txt)
+requirements.txt
+requirements_app.txt
+
+# Root config/utils (pipeline-only, not needed in Docker)
+config.py
+utils.py

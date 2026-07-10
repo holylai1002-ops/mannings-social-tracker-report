@@ -1,5 +1,0 @@
-cd C:\Users\holylai\Documents\n8n\Mannings
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-fuser -k 8000/tcp
-
-python -m uvicorn app_v2.main:app --host 127.0.0.1 --port 8010
