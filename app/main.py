@@ -94,18 +94,49 @@ async def logout(request: Request):
 
 @app.get("/api/health")
 async def health_check():
-    import os
+    import os, traceback
     from app.config import settings, BASE_DIR
+    from app.db.reader import get_available_periods, get_period_data, default_period
     excel = Path(settings.excel_path)
     comp = Path(settings.competitors_dir)
+    static_dir = BASE_DIR / "app" / "static" / "js"
+
+    # Test actual data loading
+    periods_ok = False
+    periods_count = 0
+    api_error = None
+    try:
+        periods = get_available_periods()
+        periods_count = len(periods)
+        periods_ok = True
+    except Exception as e:
+        api_error = str(e)
+
+    # Test period data
+    data_ok = False
+    sheet_count = 0
+    try:
+        y, m = default_period()
+        pd_obj = get_period_data(y, m)
+        sheet_count = len(pd_obj.sheets)
+        data_ok = True
+    except Exception as e:
+        api_error = str(e) + " | " + traceback.format_exc()[-200:]
+
     return {
         "excel_path": settings.excel_path,
         "excel_exists": excel.exists(),
         "excel_size": excel.stat().st_size if excel.exists() else 0,
         "competitors_exists": comp.exists(),
+        "static_js_exists": static_dir.exists(),
+        "static_js_files": [f.name for f in static_dir.iterdir()] if static_dir.exists() else [],
         "base_dir": str(BASE_DIR),
         "cwd": os.getcwd(),
-        "files_in_root": [f.name for f in BASE_DIR.iterdir() if f.is_file()][:20],
+        "periods_ok": periods_ok,
+        "periods_count": periods_count,
+        "data_ok": data_ok,
+        "sheet_count": sheet_count,
+        "error": api_error,
     }
 
 
