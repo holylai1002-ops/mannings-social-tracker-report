@@ -92,6 +92,23 @@ async def logout(request: Request):
 
 # ── Dashboard routes ──
 
+@app.get("/api/health")
+async def health_check():
+    import os
+    from app.config import settings, BASE_DIR
+    excel = Path(settings.excel_path)
+    comp = Path(settings.competitors_dir)
+    return {
+        "excel_path": settings.excel_path,
+        "excel_exists": excel.exists(),
+        "excel_size": excel.stat().st_size if excel.exists() else 0,
+        "competitors_exists": comp.exists(),
+        "base_dir": str(BASE_DIR),
+        "cwd": os.getcwd(),
+        "files_in_root": [f.name for f in BASE_DIR.iterdir() if f.is_file()][:20],
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 async def page_fb_page(request: Request, year: int = Query(0), month: int = Query(0)):
     if year == 0 or month == 0:
