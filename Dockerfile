@@ -13,6 +13,6 @@ USER user
 ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:$PATH
 
-EXPOSE 7860
+EXPOSE 10000
 
-CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"
