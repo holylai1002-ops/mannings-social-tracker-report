@@ -1,19 +1,14 @@
-/* Mannings Dashboard — Alpine.js controller */
+/* Mannings Dashboard v2 — Alpine.js controller (Calendar Picker) */
 
 function dashboard(initial) {
-  const monthNames = {
-    1: 'January', 2: 'February', 3: 'March', 4: 'April',
-    5: 'May', 6: 'June', 7: 'July', 8: 'August',
-    9: 'September', 10: 'October', 11: 'November', 12: 'December',
-  };
-
   return {
     // ── State ──
     page: initial.page,
-    year: initial.year,
-    month: initial.month,
-    selectedYear: initial.year,
-    selectedMonth: initial.month,
+    startDate: initial.startDate,
+    endDate: initial.endDate,
+    tempStart: initial.startDate,
+    tempEnd: initial.endDate,
+    dateError: '',
 
     loading: false,
 
@@ -46,9 +41,6 @@ function dashboard(initial) {
     igWallPosts: [],
     igStoryPosts: [],
 
-    // ── LinkedIn ──
-    liData: {},
-
     fpkGrowthTrend: null,
     fpkKpiComparison: null,
     fpkCompetitorsOverview: [],
@@ -60,10 +52,10 @@ function dashboard(initial) {
     chatHistory: [],
     chatStreaming: false,
     suggestedPrompts: [
-      'What are the key highlights this month?',
+      'What are the key highlights for this period?',
       'Which pillar performed best and why?',
       'How is the sentiment distribution?',
-      'What should we improve next month?',
+      'What should we improve next period?',
     ],
 
     // ── AI Insights ──
@@ -72,20 +64,9 @@ function dashboard(initial) {
     insightsHtml: {},
     insightsLoading: {},
 
-    // ── Periods ──
-    allPeriods: [[initial.year, initial.month]],
-    get years() {
-      return [...new Set(this.allPeriods.map(p => p[0]))].sort((a, b) => b - a);
-    },
-    get monthsForYear() {
-      return this.allPeriods
-        .filter(p => p[0] === this.selectedYear)
-        .map(p => [p[1], monthNames[p[1]] || p[1]])
-        .sort((a, b) => a[0] - b[0]);
-    },
-
+    // ── Computed ──
     get periodLabel() {
-      return `${monthNames[this.month] || ''} ${this.year}`;
+      return `${this.startDate} ~ ${this.endDate}`;
     },
 
     get pageTitles() {
@@ -93,12 +74,11 @@ function dashboard(initial) {
         fb_page: 'FB Page',
         fb_posts: 'FB Posts',
         instagram: 'Instagram',
-        linkedin: 'LinkedIn',
       };
     },
 
     // ── Generic Table Sorting ──
-    sortTable(tableKey, col) {
+    sortTable(tableKey, col, event) {
       if (!this.sortState[tableKey]) this.sortState[tableKey] = {};
       if (this.sortState[tableKey].col === col) {
         this.sortState[tableKey].asc = !this.sortState[tableKey].asc;
@@ -133,18 +113,16 @@ function dashboard(initial) {
       if (this.sortState[tableKey]) return;
       if (!data || data.length === 0) return;
       const keys = Object.keys(data[0]);
-      const dateCol = keys.find(k => ['Publish time', 'Post Date', 'Comment Date'].includes(k));
+      const dateCol = keys.find(k => ['Publish time', 'Post Date', 'Comment Date', 'Publish Time'].includes(k));
       if (dateCol) {
         this.sortState[tableKey] = { col: dateCol, asc: true };
       }
     },
 
-    // ── Sort data by value descending ──
     sortByValue(arr) {
       return [...arr].sort((a, b) => (b.value || 0) - (a.value || 0));
     },
 
-    // ── Sort sentiment combo by total desc ──
     sortSentimentByTotal(arr) {
       return [...arr].sort((a, b) => {
         const ta = (a.Positive || 0) + (a.Neutral || 0) + (a.Negative || 0);
@@ -155,53 +133,82 @@ function dashboard(initial) {
 
     // ── Init ──
     init() {
-      this.loadPeriods().then(() => {
-        this.$nextTick(() => {
-          this.selectedYear = this.year;
-          this.selectedMonth = this.month;
-          this.loadAll(this.year, this.month);
-        });
-      });
+      this.loadAll();
     },
 
-    async loadPeriods() {
-      try {
-        const res = await fetch('/api/periods');
-        const data = await res.json();
-        const fetched = (data.periods || []).map(p => [p.year, p.month]);
-        if (fetched.length > 0) {
-          this.allPeriods = fetched;
-        }
-      } catch (e) {
-        console.error('Failed to load periods:', e);
+    // ── Preset Buttons ──
+    setPreset(preset) {
+      const today = new Date();
+      let s, e;
+      if (preset === 'lastMonth') {
+        const d = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        s = new Date(d.getFullYear(), d.getMonth(), 1);
+        e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      } else if (preset === 'last7Days') {
+        e = new Date(today);
+        s = new Date(today);
+        s.setDate(s.getDate() - 6);
+      } else if (preset === 'thisYear') {
+        s = new Date(today.getFullYear(), 0, 1);
+        e = new Date(today);
       }
+      this.startDate = this.fmtDate(s);
+      this.endDate = this.fmtDate(e);
+      this.tempStart = this.startDate;
+      this.tempEnd = this.endDate;
+      this.dateError = '';
+      this.onRangeChange();
     },
 
-    // ── Period Change ──
-    onPeriodChange() {
-      this.year = this.selectedYear;
-      this.month = this.selectedMonth;
+    fmtDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
+
+    get maxDate() {
+      return this.fmtDate(new Date());
+    },
+
+    applyDateRange() {
+      if (!this.tempStart || !this.tempEnd) {
+        this.dateError = 'Please select both dates.';
+        return;
+      }
+      if (this.tempStart > this.tempEnd) {
+        this.dateError = 'Start date cannot be after end date.';
+        return;
+      }
+      this.dateError = '';
+      this.startDate = this.tempStart;
+      this.endDate = this.tempEnd;
+      this.onRangeChange();
+    },
+
+    // ── Range Change ──
+    onRangeChange() {
       this.insightsText = {};
       this.insightsHtml = {};
       this.insightsLoading = {};
       this.sortState = {};
-      this.loadAll(this.year, this.month);
+      this.loadAll();
       const url = new URL(window.location);
-      url.searchParams.set('year', this.year);
-      url.searchParams.set('month', this.month);
+      url.searchParams.set('start', this.startDate);
+      url.searchParams.set('end', this.endDate);
       window.history.replaceState({}, '', url);
     },
 
     // ── Load All Data ──
-    async loadAll(year, month) {
+    async loadAll() {
       this.loading = true;
       try {
         await Promise.all([
-          this.loadKPIs(year, month),
-          this.loadPageData(year, month),
+          this.loadKPIs(),
+          this.loadPageData(),
         ]);
         if (this.page === 'fb_page' || this.page === 'instagram') {
-          await this.loadFPK(year, month);
+          await this.loadFPK();
         }
       } catch (e) {
         console.error('Load error:', e);
@@ -220,14 +227,12 @@ function dashboard(initial) {
       });
     },
 
-    async loadKPIs(year, month) {
+    async loadKPIs() {
       try {
-        const res = await fetch(`/api/data/kpis?year=${year}&month=${month}`);
+        const res = await fetch(`/api/data/kpis?start=${this.startDate}&end=${this.endDate}`);
         const data = await res.json();
         let kpis = [];
-        if (this.page === 'linkedin') {
-          return;
-        } else if (this.page === 'fb_page' || this.page === 'fb_posts') {
+        if (this.page === 'fb_page' || this.page === 'fb_posts') {
           kpis = [
             { label: 'Total Page Follows', value: this.fmt(data.fb_followers) },
             { label: 'FB Page Follows Growth', value: this.fmt(data.fb_growth) },
@@ -246,16 +251,15 @@ function dashboard(initial) {
       } catch (e) { console.error('KPI load error:', e); }
     },
 
-    async loadPageData(year, month) {
+    async loadPageData() {
       const pageMap = {
         fb_page: 'fb_page',
         fb_posts: 'fb_posts',
         instagram: 'instagram',
-        linkedin: 'linkedin',
       };
       const endpoint = pageMap[this.page];
       try {
-        const res = await fetch(`/api/data/${endpoint}?year=${year}&month=${month}`);
+        const res = await fetch(`/api/data/${endpoint}?start=${this.startDate}&end=${this.endDate}`);
         const data = await res.json();
 
         if (this.page === 'fb_page') {
@@ -263,7 +267,6 @@ function dashboard(initial) {
           this.sentimentByCategory = this.sortSentimentByTotal(data.sentiment_by_category || []);
           this.sentimentByType = this.sortSentimentByTotal(data.sentiment_by_type || []);
           this.fbKeyMetrics = data.fb_key_metrics || [];
-          this.initDefaultSort('fbKeyMetrics', this.fbKeyMetrics);
           this.followersGrowth = data.followers_growth || null;
           this.totalReach = data.total_reach || null;
           this.reachFunnel = data.reach_funnel || null;
@@ -288,23 +291,14 @@ function dashboard(initial) {
           this.igStoryPosts = data.ig_story_posts || [];
           this.initDefaultSort('igWall', this.igWallPosts);
           this.initDefaultSort('igStory', this.igStoryPosts);
-        } else if (this.page === 'linkedin') {
-          this.liData = data;
-          this.initDefaultSort('liPosts', data.posts || []);
-          this.kpis = [
-            { label: 'Total Followers', value: this.fmt(data.total_followers || 0) },
-            { label: 'New Followers', value: this.fmt(data.new_followers || 0) },
-            { label: 'Posts', value: this.fmt(data.post_count || 0) },
-            { label: 'Total Impressions', value: this.fmt(data.total_impressions || 0) },
-          ];
         }
       } catch (e) { console.error('Page data load error:', e); }
     },
 
-    async loadFPK(year, month) {
+    async loadFPK() {
       const platform = this.page === 'instagram' ? 'ig' : 'fb';
       try {
-        const res = await fetch(`/api/data/fpk?year=${year}&month=${month}&platform=${platform}`);
+        const res = await fetch(`/api/data/fpk?start=${this.startDate}&end=${this.endDate}&platform=${platform}`);
         const data = await res.json();
         this.fpkGrowthTrend = data.growth_trend || null;
         this.fpkKpiComparison = data.kpi_comparison || null;
@@ -366,8 +360,6 @@ function dashboard(initial) {
         if (this.igStoryClicks.length > 0) {
           renderBarChart('chart-ig-story-clicks', this.igStoryClicks, 'Link Clicks');
         }
-      } else if (this.page === 'linkedin') {
-        this.renderLinkedInCharts();
       }
 
       if (this.fpkGrowthTrend) {
@@ -378,45 +370,6 @@ function dashboard(initial) {
       }
       if (this.fpkTopWords.length > 0) {
         this.$nextTick(function() { renderTagCloud('chart-fpk-words', this.fpkTopWords); }.bind(this));
-      }
-    },
-
-    renderLinkedInCharts() {
-      var d = this.liData;
-      if (!d) return;
-
-      if (d.org_paid_donut && d.org_paid_donut.length > 0) {
-        renderLiDonut('chart-li-org-paid', d.org_paid_donut, ['Organic', 'Paid'], ['#43A047', '#FE8301']);
-      }
-      if (d.net_followers) {
-        renderLiNetFollowers('chart-li-net-followers', d.net_followers);
-      }
-      if (d.clicks) {
-        renderLiLine('chart-li-clicks', d.clicks, '#FE8301', 'Clicks');
-      }
-      if (d.impressions) {
-        renderLiLine('chart-li-impressions', d.impressions, '#FE8301', 'Impressions');
-      }
-      if (d.social_actions) {
-        renderLiSocialActions('chart-li-social', d.social_actions);
-      }
-      if (d.top_countries && d.top_countries.length > 0) {
-        renderLiHBar('chart-li-country', d.top_countries, '#FE8301');
-      }
-      if (d.top_company_size && d.top_company_size.length > 0) {
-        renderLiHBar('chart-li-company-size', d.top_company_size, '#FE8301');
-      }
-      if (d.top_seniority && d.top_seniority.length > 0) {
-        renderLiHBar('chart-li-seniority', d.top_seniority, '#FE8301');
-      }
-      if (d.top_job_function && d.top_job_function.length > 0) {
-        renderLiVBarMulti('chart-li-job-function', d.top_job_function);
-      }
-      if (d.top_industry && d.top_industry.length > 0) {
-        renderLiVBarMulti('chart-li-industry', d.top_industry);
-      }
-      if (d.visitor_metrics) {
-        renderLiVisitorMetrics('chart-li-visitors', d.visitor_metrics);
       }
     },
 
@@ -494,7 +447,7 @@ function dashboard(initial) {
     // ── Print PDF ──
     printPDF() {
       const origTitle = document.title;
-      document.title = `Mannings_${this.pageTitles[this.page]}_${this.year}_${this.month}`;
+      document.title = `Mannings_${this.pageTitles[this.page]}_${this.startDate}_${this.endDate}`;
       window.print();
       setTimeout(() => { document.title = origTitle; }, 2000);
     },
@@ -521,31 +474,13 @@ function dashboard(initial) {
         'chart-fpk-growth': ['Competitor Fans Growth Trend', 'line', () => this.fpkGrowthTrend],
         'chart-fpk-bubble': ['KPI Comparison', 'bubble', () => this.fpkKpiComparison],
         'chart-fpk-words': ['Top 50 Words: Post Interaction Rate', 'tagcloud', () => this.fpkTopWords],
-        'chart-li-org-paid': ['LinkedIn: Organic vs. Paid New Followers', 'donut', () => (this.liData || {}).org_paid_donut],
-        'chart-li-net-followers': ['LinkedIn: Net Followers', 'bar', () => (this.liData || {}).net_followers],
-        'chart-li-clicks': ['LinkedIn: Clicks', 'line', () => (this.liData || {}).clicks],
-        'chart-li-impressions': ['LinkedIn: Impressions', 'line', () => (this.liData || {}).impressions],
-        'chart-li-social': ['LinkedIn: Social Actions', 'bar', () => (this.liData || {}).social_actions],
-        'chart-li-country': ['LinkedIn: Top Followers by Country', 'bar', () => (this.liData || {}).top_countries],
-        'chart-li-company-size': ['LinkedIn: Top Followers by Company Size', 'bar', () => (this.liData || {}).top_company_size],
-        'chart-li-seniority': ['LinkedIn: Top Followers by Seniority', 'bar', () => (this.liData || {}).top_seniority],
-        'chart-li-job-function': ['LinkedIn: Followers by Job Function', 'bar', () => (this.liData || {}).top_job_function],
-        'chart-li-industry': ['LinkedIn: Followers by Industry', 'bar', () => (this.liData || {}).top_industry],
-        'chart-li-visitors': ['LinkedIn: Visitor Metrics', 'line', () => (this.liData || {}).visitor_metrics],
-        'chart-li-followers-card': ['LinkedIn: Followers Summary', 'card', () => ({
-          total_followers: (this.liData || {}).total_followers,
-          new_followers: (this.liData || {}).new_followers,
-          organic: (this.liData || {}).organic_followers,
-          paid: (this.liData || {}).paid_followers,
-        })],
       };
       const tableMeta = {
-        'tbl-fb-key-metrics': ['FB Key Metrics', 'table', () => this.getSortedData(this.fbKeyMetrics, 'fbKeyMetrics')],
-        'tbl-ig-key-metrics': ['IG Key Metrics', 'table', () => this.getSortedData(this.igKeyMetrics, 'igKeyMetrics')],
-        'tbl-fb-wall-posts': ['FB Wall Post Performance', 'table', () => this.getSortedData(this.wallPosts, 'fbWall')],
-        'tbl-ig-wall-posts': ['IG Wall Posts', 'table', () => this.getSortedData(this.igWallPosts, 'igWall')],
-        'tbl-fpk-overview': ['Competitors Overview', 'table', () => this.getSortedData(this.fpkCompetitorsOverview, 'fpkOverview')],
-        'tbl-li-posts': ['LinkedIn Post Content', 'table', () => this.getSortedData((this.liData || {}).posts || [], 'liPosts')],
+        'tbl-fb-key-metrics': ['FB Key Metrics', 'table', () => this.fbKeyMetrics],
+        'tbl-ig-key-metrics': ['IG Key Metrics', 'table', () => this.igKeyMetrics],
+        'tbl-fb-wall-posts': ['FB Wall Post Performance', 'table', () => this.wallPosts],
+        'tbl-ig-wall-posts': ['IG Wall Posts', 'table', () => this.igWallPosts],
+        'tbl-fpk-overview': ['Competitors Overview', 'table', () => this.fpkCompetitorsOverview],
       };
       return meta[id] || tableMeta[id];
     },
@@ -587,8 +522,8 @@ function dashboard(initial) {
             chart_title: title,
             chart_type: ctype,
             data_summary: summary,
-            year: this.year,
-            month: this.month,
+            start: this.startDate,
+            end: this.endDate,
           }),
         });
 
@@ -655,8 +590,8 @@ function dashboard(initial) {
             history: this.chatHistory
               .slice(0, assistantIdx)
               .map(h => ({ role: h.role, content: h.content })),
-            year: this.year,
-            month: this.month,
+            start: this.startDate,
+            end: this.endDate,
           }),
         });
 
@@ -702,12 +637,13 @@ function dashboard(initial) {
     exportGrowthTrend() {
       if (!this.fpkGrowthTrend) return;
       var d = this.fpkGrowthTrend;
+      var self = this;
       var rows = d.dates.map(function(date, i) {
         var row = { Date: date };
         d.series.forEach(function(s) { row[s.name] = s.data[i]; });
         return row;
       });
-      this.exportToExcel(rows, 'competitor_growth_trend_' + this.year + '_' + this.month + '.xlsx', 'Growth Trend');
+      this.exportToExcel(rows, 'competitor_growth_trend_' + this.startDate + '_' + this.endDate + '.xlsx', 'Growth Trend');
     },
 
     exportFollowersGrowth() {
@@ -716,7 +652,7 @@ function dashboard(initial) {
       var rows = d.dates.map(function(date, i) {
         return { Date: date, Gain: d.gain[i], Loss: d.loss[i], Net: d.net[i] };
       });
-      this.exportToExcel(rows, 'followers_growth_' + this.year + '_' + this.month + '.xlsx', 'Followers Growth');
+      this.exportToExcel(rows, 'followers_growth_' + this.startDate + '_' + this.endDate + '.xlsx', 'Followers Growth');
     },
 
     exportTotalReach() {
@@ -725,7 +661,7 @@ function dashboard(initial) {
       var rows = d.dates.map(function(date, i) {
         return { Date: date, 'Total Reach': d.reach[i] };
       });
-      this.exportToExcel(rows, 'total_reach_' + this.year + '_' + this.month + '.xlsx', 'Total Reach');
+      this.exportToExcel(rows, 'total_reach_' + this.startDate + '_' + this.endDate + '.xlsx', 'Total Reach');
     },
 
     exportReachFunnel() {
@@ -735,7 +671,7 @@ function dashboard(initial) {
         { Type: 'Organic Reach', Reach: d.organic },
         { Type: 'Paid Reach', Reach: d.paid },
         { Type: 'Total', Reach: d.total },
-      ], 'reach_funnel_' + this.year + '_' + this.month + '.xlsx', 'Reach Funnel');
+      ], 'reach_funnel_' + this.startDate + '_' + this.endDate + '.xlsx', 'Reach Funnel');
     },
 
     exportIgFollowers() {
@@ -744,7 +680,7 @@ function dashboard(initial) {
       var rows = d.dates.map(function(date, i) {
         return { Date: date, 'Followers Net': d.net[i] };
       });
-      this.exportToExcel(rows, 'ig_followers_' + this.year + '_' + this.month + '.xlsx', 'IG Followers');
+      this.exportToExcel(rows, 'ig_followers_' + this.startDate + '_' + this.endDate + '.xlsx', 'IG Followers');
     },
 
     exportKpiComparison() {
@@ -752,7 +688,7 @@ function dashboard(initial) {
       var rows = this.fpkKpiComparison.items.map(function(item) {
         return { Company: item.name, 'Number of Posts': item.posts, 'Reactions, Comments & Shares': item.reactions };
       });
-      this.exportToExcel(rows, 'kpi_comparison_' + this.year + '_' + this.month + '.xlsx', 'KPI Comparison');
+      this.exportToExcel(rows, 'kpi_comparison_' + this.startDate + '_' + this.endDate + '.xlsx', 'KPI Comparison');
     },
 
     exportTopWords() {
@@ -760,44 +696,7 @@ function dashboard(initial) {
       var rows = this.fpkTopWords.map(function(d) {
         return { Word: d.word, Value: d.value, 'Times Above Average': d.times_above_avg };
       });
-      this.exportToExcel(rows, 'top50_words_' + this.year + '_' + this.month + '.xlsx', 'Top 50 Words');
-    },
-
-    exportLiNetFollowers() {
-      if (!this.liData || !this.liData.net_followers) return;
-      var nf = this.liData.net_followers;
-      var rows = nf.dates.map(function(d, i) {
-        return { Date: d, Organic: nf.organic[i] || 0, Paid: nf.paid[i] || 0 };
-      });
-      this.exportToExcel(rows, 'li_net_followers_' + this.year + '_' + this.month + '.xlsx', 'Net Followers');
-    },
-
-    exportLiDailyData(data, label) {
-      if (!data || !data.dates) return;
-      var rows = data.dates.map(function(d, i) {
-        var r = { Date: d };
-        r[label.charAt(0).toUpperCase() + label.slice(1)] = data.values[i] || 0;
-        return r;
-      });
-      this.exportToExcel(rows, 'li_' + label + '_' + this.year + '_' + this.month + '.xlsx', label);
-    },
-
-    exportLiSocialActions() {
-      if (!this.liData || !this.liData.social_actions) return;
-      var sa = this.liData.social_actions;
-      var rows = sa.dates.map(function(d, i) {
-        return { Date: d, Comments: sa.comments[i] || 0, Likes: sa.likes[i] || 0, Shares: sa.shares[i] || 0 };
-      });
-      this.exportToExcel(rows, 'li_social_actions_' + this.year + '_' + this.month + '.xlsx', 'Social Actions');
-    },
-
-    exportLiVisitorMetrics() {
-      if (!this.liData || !this.liData.visitor_metrics) return;
-      var vm = this.liData.visitor_metrics;
-      var rows = vm.dates.map(function(d, i) {
-        return { Date: d, Desktop: vm.desktop[i] || 0, Mobile: vm.mobile[i] || 0 };
-      });
-      this.exportToExcel(rows, 'li_visitor_metrics_' + this.year + '_' + this.month + '.xlsx', 'Visitor Metrics');
+      this.exportToExcel(rows, 'top50_words_' + this.startDate + '_' + this.endDate + '.xlsx', 'Top 50 Words');
     },
   };
 }

@@ -405,11 +405,6 @@
   padding-left: 16px;
 }
 
-.key-metrics-wrap .dash-table td:first-child,
-.key-metrics-wrap .dash-table th:first-child {
-  min-width: 200px;
-}
-
 /* ═══════════════════════════════════════════════════════════════
    AI INSIGHTS BUTTON + PANEL
    ═══════════════════════════════════════════════════════════════ */

@@ -149,6 +149,25 @@ async def page_instagram(request: Request, year: int = Query(0), month: int = Qu
     )
 
 
+@app.get("/linkedin", response_class=HTMLResponse)
+async def page_linkedin(request: Request, year: int = Query(0), month: int = Query(0)):
+    if year == 0 or month == 0:
+        year, month = default_period()
+    periods = get_available_periods()
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "page": "linkedin",
+            "page_title": "LinkedIn",
+            "year": year,
+            "month": month,
+            "period_label": f"{MONTH_NAMES.get(month, '')} {year}",
+            "periods": periods,
+        },
+    )
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

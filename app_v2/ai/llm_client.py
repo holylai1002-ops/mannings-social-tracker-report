@@ -1,4 +1,4 @@
-"""
+﻿"""
 LLM client — streaming chat via OpenRouter (free models, works in Hong Kong).
 
 Uses the OpenAI SDK pointed at OpenRouter's API.
@@ -8,10 +8,10 @@ Default model: deepseek/deepseek-chat-v3-0324:free
 import logging
 from typing import AsyncGenerator
 
-from app.config import settings
-from app.ai.prompts import SYSTEM_PROMPT
-from app.ai.context import build_context
-from app.db.reader import PeriodData
+from app_v2.config import settings
+from app_v2.ai.prompts import SYSTEM_PROMPT
+from app_v2.ai.context import build_context
+from app_v2.db.range_reader import RangeData as PeriodData
 
 logger = logging.getLogger(__name__)
 
@@ -75,26 +75,17 @@ async def stream_chat(
             api_messages.append({"role": "assistant", "content": m["content"]})
 
     try:
-        models_to_try = [settings.openrouter_model] + FALLBACK_MODELS
-        for i, model in enumerate(models_to_try):
-            try:
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=api_messages,
-                    temperature=0.4,
-                    max_tokens=4000,
-                    stream=True,
-                )
-                async for chunk in response:
-                    delta = chunk.choices[0].delta if chunk.choices else None
-                    if delta and delta.content:
-                        yield delta.content
-                return
-            except Exception as e:
-                logger.warning(f"Model {model} failed: {e}")
-                if i < len(models_to_try) - 1:
-                    continue
-                yield f"抱歉，生成回覆時發生錯誤：{e}"
+        response = await client.chat.completions.create(
+            model=settings.openrouter_model,
+            messages=api_messages,
+            temperature=0.4,
+            max_tokens=4000,
+            stream=True,
+        )
+        async for chunk in response:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                yield delta.content
     except Exception as e:
         logger.error(f"OpenRouter streaming error: {e}")
         yield f"抱歉，生成回覆時發生錯誤：{e}"
@@ -118,26 +109,6 @@ INSIGHTS_PROMPT = """你是 Mannings（萬寧）社交媒體數據分析專家�
 """
 
 
-FALLBACK_MODELS = [
-    "google/gemma-3-27b-it:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "deepseek/deepseek-chat-v3-0324:free",
-]
-
-
-async def _try_stream(client, model, messages, temperature, max_tokens):
-    """Attempt a streaming completion. Returns (async_gen, model) or raises."""
-    response = await client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        stream=True,
-    )
-    return response
-
-
 async def stream_insights(
     chart_title: str,
     chart_type: str,
@@ -150,19 +121,20 @@ async def stream_insights(
         return
 
     prompt = INSIGHTS_PROMPT.format(title=chart_title, ctype=chart_type, summary=data_summary)
-    msg = [{"role": "user", "content": prompt}]
 
-    models_to_try = [settings.openrouter_model] + FALLBACK_MODELS
-    for i, model in enumerate(models_to_try):
-        try:
-            response = await _try_stream(client, model, msg, 0.4, 600)
-            async for chunk in response:
-                delta = chunk.choices[0].delta if chunk.choices else None
-                if delta and delta.content:
-                    yield delta.content
-            return
-        except Exception as e:
-            logger.warning(f"Model {model} failed: {e}")
-            if i < len(models_to_try) - 1:
-                continue
-            yield f"抱歉，生成分析時發生錯誤：{e}"
+    try:
+        response = await client.chat.completions.create(
+            model=settings.openrouter_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=600,
+            stream=True,
+        )
+        async for chunk in response:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                yield delta.content
+    except Exception as e:
+        logger.error(f"OpenRouter insights error: {e}")
+        yield f"抱歉，生成分析時發生錯誤：{e}"
+

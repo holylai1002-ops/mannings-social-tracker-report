@@ -510,6 +510,181 @@ def api_fpk(year: int = 0, month: int = 0, platform: str = "fb"):
     return result
 
 
+@router.get("/api/data/linkedin")
+def api_linkedin(year: int = 0, month: int = 0):
+    if year == 0 or month == 0:
+        year, month = default_period()
+    pd_obj = get_period_data(year, month)
+
+    fl = pd_obj.get("LinkedIn Follower Log")
+    pp = pd_obj.get("LinkedIn Page Perf")
+    posts = pd_obj.get("LinkedIn Posts Perf")
+
+    # Normalize column name (pipeline renames "Date Polled"→"Date"; manual Excel may not)
+    if not fl.empty and "Date Polled" in fl.columns and "Date" not in fl.columns:
+        fl = fl.rename(columns={"Date Polled": "Date"})
+
+    _MONTH_ABBR = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+                   7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"}
+    _abbr_val = {v: k for k, v in _MONTH_ABBR.items()}
+    month_abbr = _MONTH_ABBR.get(month, "")
+
+    # ── Follower Log: filter Organic/Paid by Month column ──
+    fl_organic = []
+    fl_paid = []
+    if not fl.empty:
+        fl_org_paid = fl[fl["Category"].astype(str).str.strip().str.lower().isin(["organic", "paid"])].copy()
+        if "Month" in fl_org_paid.columns:
+            fl_org_paid = fl_org_paid[fl_org_paid["Month"].astype(str).str.strip().str.title() == month_abbr]
+        if not fl_org_paid.empty:
+            for _, row in fl_org_paid.iterrows():
+                cat = str(row.get("Category", "")).strip().lower()
+                val = _safe_int(row.get("Total Followers", 0))
+                date_str = str(row.get("Date", ""))
+                entry = {"date": date_str, "value": val}
+                if cat == "organic":
+                    fl_organic.append(entry)
+                elif cat == "paid":
+                    fl_paid.append(entry)
+
+    total_organic = sum(d["value"] for d in fl_organic)
+    total_paid = sum(d["value"] for d in fl_paid)
+    total_new = total_organic + total_paid
+
+    # ── Cumulative total from Net category (latest value in months <= selected) ──
+    cumulative = 0
+    if not fl.empty:
+        fl_net = fl[fl["Category"].astype(str).str.strip().str.lower() == "net"].copy()
+        if "Month" in fl_net.columns and not fl_net.empty:
+            fl_net = fl_net[fl_net["Month"].astype(str).str.strip().str.title().map(lambda x: _abbr_val.get(x, 0)) <= month]
+        if not fl_net.empty:
+            fl_net["_dt"] = pd.to_datetime(fl_net["Date"], format="mixed", errors="coerce")
+            latest_row = fl_net.loc[fl_net["_dt"].idxmax()]
+            cumulative = int(latest_row["Total Followers"])
+
+    # ── Organic vs Paid donut ──
+    org_paid_donut = [
+        {"name": "Organic", "value": total_organic},
+        {"name": "Paid", "value": total_paid},
+    ]
+
+    # ── Net Followers bar (daily organic + paid grouped) ──
+    net_followers = None
+    if fl_organic or fl_paid:
+        org_map = {d["date"]: d["value"] for d in fl_organic}
+        paid_map = {d["date"]: d["value"] for d in fl_paid}
+        all_dates = sorted(set(list(org_map.keys()) + list(paid_map.keys())),
+                           key=lambda x: pd.to_datetime(x, format="mixed", errors="coerce"))
+        net_followers = {
+            "dates": [pd.to_datetime(d, format="mixed", errors="coerce").strftime("%Y-%m-%d") if d else d for d in all_dates],
+            "organic": [org_map.get(d, 0) for d in all_dates],
+            "paid": [paid_map.get(d, 0) for d in all_dates],
+        }
+
+    # ── Demographics (latest snapshot) ──
+    demo_data = {"location": [], "company_size": [], "seniority": [], "job_function": [], "industry": []}
+    if not fl.empty and "Category" in fl.columns:
+        prefix_map = {"Location": "location", "Company Size": "company_size",
+                      "Seniority": "seniority", "Job Function": "job_function", "Industry": "industry"}
+        for _, row in fl.iterrows():
+            cat = str(row.get("Category", "")).strip()
+            demo = str(row.get("Demographic", "")).strip()
+            val = _safe_int(row.get("Total Followers", 0))
+            log_date = str(row.get("Log Date", "")).strip()
+            for prefix, key in prefix_map.items():
+                if cat.startswith("Top ") and cat.endswith(prefix):
+                    rank_str = cat.replace("Top ", "").replace(" " + prefix, "").strip()
+                    demo_data[key].append({"name": demo, "value": val, "rank": rank_str, "log_date": log_date})
+
+    def _latest_top5(items):
+        if not items:
+            return []
+        latest = max(i["log_date"] for i in items if i["log_date"])
+        latest_items = [i for i in items if i["log_date"] == latest]
+        latest_items.sort(key=lambda x: int(x["rank"]) if str(x["rank"]).isdigit() else 99)
+        seen_ranks = set()
+        result = []
+        for i in latest_items:
+            if i["rank"] not in seen_ranks and i["name"]:
+                seen_ranks.add(i["rank"])
+                result.append({"name": i["name"], "value": i["value"]})
+        return result[:5]
+
+    top_countries = _latest_top5(demo_data["location"])
+    top_company_size = _latest_top5(demo_data["company_size"])
+    top_seniority = _latest_top5(demo_data["seniority"])
+    top_job_function = _latest_top5(demo_data["job_function"])
+    top_industry = _latest_top5(demo_data["industry"])
+
+    # ── Page Perf: filter by Month column ──
+    clicks_data = None
+    impressions_data = None
+    social_actions = None
+    visitor_metrics = None
+    if not pp.empty:
+        pp_filtered = pp
+        if "Month" in pp.columns:
+            pp_filtered = pp[pp["Month"].astype(str).str.strip().str.title() == month_abbr].copy()
+        if not pp_filtered.empty:
+            _pp_dt = pd.to_datetime(pp_filtered["Date"], format="mixed", errors="coerce")
+            pp_filtered = pp_filtered.copy()
+            pp_filtered["_dt"] = _pp_dt
+            pp_filtered = pp_filtered.sort_values("_dt")
+            pp_dates = _pp_dt.dt.strftime("%Y-%m-%d").tolist() if "Date" in pp_filtered.columns else []
+
+            clicks_data = {
+                "dates": pp_dates,
+                "values": [int(x) for x in pd.to_numeric(pp_filtered["Clicks"], errors="coerce").fillna(0)] if "Clicks" in pp_filtered.columns else [],
+            }
+            impressions_data = {
+                "dates": pp_dates,
+                "values": [int(x) for x in pd.to_numeric(pp_filtered["Impressions"], errors="coerce").fillna(0)] if "Impressions" in pp_filtered.columns else [],
+            }
+            social_actions = {
+                "dates": pp_dates,
+                "comments": [int(x) for x in pd.to_numeric(pp_filtered["Comments"], errors="coerce").fillna(0)] if "Comments" in pp_filtered.columns else [],
+                "likes": [int(x) for x in pd.to_numeric(pp_filtered["Likes"], errors="coerce").fillna(0)] if "Likes" in pp_filtered.columns else [],
+                "shares": [int(x) for x in pd.to_numeric(pp_filtered["Shares"], errors="coerce").fillna(0)] if "Shares" in pp_filtered.columns else [],
+            }
+            visitor_metrics = {
+                "dates": pp_dates,
+                "desktop": [int(x) for x in pd.to_numeric(pp_filtered["Desktop Views"], errors="coerce").fillna(0)] if "Desktop Views" in pp_filtered.columns else [],
+                "mobile": [int(x) for x in pd.to_numeric(pp_filtered["Mobile Views"], errors="coerce").fillna(0)] if "Mobile Views" in pp_filtered.columns else [],
+            }
+
+    # ── Posts table (filter by Month column) ──
+    posts_filtered = pd.DataFrame()
+    if not posts.empty:
+        if "Month" in posts.columns:
+            posts_filtered = posts[posts["Month"].astype(str).str.strip().str.title() == month_abbr].copy()
+
+    posts_records = _df_to_records(posts_filtered) if not posts_filtered.empty else []
+
+    return {
+        "period": pd_obj.period_str,
+        "label": f"{MONTH_NAMES.get(month, '')} {year}",
+        "total_followers": cumulative,
+        "new_followers": total_new,
+        "organic_followers": total_organic,
+        "paid_followers": total_paid,
+        "org_paid_donut": org_paid_donut,
+        "net_followers": net_followers,
+        "clicks": clicks_data,
+        "impressions": impressions_data,
+        "social_actions": social_actions,
+        "visitor_metrics": visitor_metrics,
+        "top_countries": top_countries,
+        "top_company_size": top_company_size,
+        "top_seniority": top_seniority,
+        "top_job_function": top_job_function,
+        "top_industry": top_industry,
+        "posts": posts_records,
+        "post_count": len(posts_records),
+        "total_impressions": sum(_safe_int(r.get("Impressions", 0)) for r in posts_records),
+        "total_interactions": sum(_safe_int(r.get("Total Interactions", 0)) for r in posts_records),
+    }
+
+
 @router.get("/api/images")
 def api_images(year: int = 0, month: int = 0):
     """List FPK screenshots for a period."""

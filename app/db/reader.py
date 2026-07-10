@@ -61,12 +61,12 @@ class PeriodData:
         return {
             "fb_followers": _get_metric(fb_key, "Total Followers", self.period_str),
             "fb_growth": _get_metric(fb_key, "Net Followers Growth", self.period_str),
-            "fb_wall_posts": _get_metric(fb_key, "No. of Wall Post", self.period_str),
-            "fb_interactions": _get_metric(fb_key, "Total Interaction*", self.period_str),
+            "fb_wall_posts": len(self.get("FB Wall Post Performance")),
+            "fb_interactions": _get_metric(fb_key, "Total Interactions", self.period_str),
             "ig_followers": _get_metric(ig_key, "Total Followers", self.period_str),
             "ig_growth": _get_metric(ig_key, "Net Followers Growth", self.period_str),
             "ig_reach": _get_metric(ig_key, "Total Post Reach", self.period_str),
-            "ig_interactions": _get_metric(ig_key, "Total Post Interaction^", self.period_str),
+            "ig_interactions": _get_metric(ig_key, "Total Post Interaction", self.period_str),
         }
 
 
@@ -183,6 +183,9 @@ def get_period_data(year: int, month: int) -> PeriodData:
         "Unique Page View": ("api_date", None),
         "Reach Funnel": ("reach_funnel", None),
         "FB Reach Funnel": ("reach_funnel", None),
+        "LinkedIn Follower Log": ("raw", None),
+        "LinkedIn Page Perf": ("raw", None),
+        "LinkedIn Posts Perf": ("raw", None),
     }
 
     for sheet_name, (filter_type, date_col) in sheet_map.items():

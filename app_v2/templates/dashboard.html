@@ -95,7 +95,7 @@
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-semibold text-ink">Total Comments by Sentiment</h3>
         <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportToExcel(sentimentDist.map(d => ({Sentiment: d.name, Count: d.value})), 'sentiment_dist_' + year + '_' + month + '.xlsx', 'Sentiment')">
+          <button class="export-btn" @click="exportToExcel(sentimentDist.map(d => ({Sentiment: d.name, Count: d.value})), 'sentiment_dist_' + startDate + '_' + endDate + '.xlsx', 'Sentiment')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -146,14 +146,14 @@
       <div class="table-header-bar">
         <h3>FB Key Metrics</h3>
         <div class="table-actions no-print">
-          <button class="export-btn" @click="exportToExcel(getSortedData(fbKeyMetrics, 'fbKeyMetrics'), 'fb_key_metrics_' + year + '_' + month + '.xlsx', 'FB Key Metrics')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(fbKeyMetrics, 'fbKeyMetrics'), 'fb_key_metrics_' + startDate + '_' + endDate + '.xlsx', 'FB Key Metrics')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
           <button class="ai-btn" @click="getInsights('tbl-fb-key-metrics')">AI</button>
         </div>
       </div>
-      <div class="dash-table-wrap key-metrics-wrap">
+      <div class="dash-table-wrap">
         <table class="dash-table">
           <thead>
             <tr>
@@ -180,14 +180,14 @@
     </div>
 
     <!-- ══ Competitor Analysis ══ -->
-    <h2 class="section-header">Competitor Analysis</h2>
+    <h2 class="section-header" x-text="'Competitor Analysis - ' + startDate.substring(0,7)"></h2>
 
     <!-- FPK: Competitors Overview — Table -->
     <div x-show="fpkCompetitorsOverview.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
       <div class="table-header-bar">
         <h3>Competitors Overview</h3>
         <div class="table-actions no-print">
-          <button class="export-btn" @click="exportToExcel(getSortedData(fpkCompetitorsOverview, 'fpkOverview').filter(r => {delete r.key; delete r.color; delete r.logo; return true}), 'competitors_overview_' + year + '_' + month + '.xlsx', 'Overview')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(fpkCompetitorsOverview.filter(r => {delete r.key; delete r.color; delete r.logo; return true}), 'fpkOverview'), 'competitors_overview_' + startDate + '_' + endDate + '.xlsx', 'Overview')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -271,7 +271,7 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-ink">Posts by Pillar</h3>
           <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(pillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'fb_posts_by_pillar_' + year + '_' + month + '.xlsx', 'Posts by Pillar')">
+            <button class="export-btn" @click="exportToExcel(pillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'fb_posts_by_pillar_' + startDate + '_' + endDate + '.xlsx', 'Posts by Pillar')">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Export
             </button>
@@ -288,7 +288,7 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-ink">Posts by Type</h3>
           <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(typeDonut.map(d => ({Type: d.name, Posts: d.value})), 'fb_posts_by_type_' + year + '_' + month + '.xlsx', 'Posts by Type')">
+            <button class="export-btn" @click="exportToExcel(typeDonut.map(d => ({Type: d.name, Posts: d.value})), 'fb_posts_by_type_' + startDate + '_' + endDate + '.xlsx', 'Posts by Type')">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Export
             </button>
@@ -308,7 +308,7 @@
       <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
         <h3 class="text-sm font-semibold text-ink">Interactions by Pillar</h3>
         <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportToExcel(pillarInteractions.map(d => ({Pillar: d.name, Interactions: d.value})), 'pillar_interactions_' + year + '_' + month + '.xlsx', 'Pillar')">
+          <button class="export-btn" @click="exportToExcel(pillarInteractions.map(d => ({Pillar: d.name, Interactions: d.value})), 'pillar_interactions_' + startDate + '_' + endDate + '.xlsx', 'Pillar')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -327,7 +327,7 @@
       <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
         <h3 class="text-sm font-semibold text-ink">Interactions by Category</h3>
         <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportToExcel(catInteractions.map(d => ({Category: d.name, Interactions: d.value})), 'cat_interactions_' + year + '_' + month + '.xlsx', 'Category')">
+          <button class="export-btn" @click="exportToExcel(catInteractions.map(d => ({Category: d.name, Interactions: d.value})), 'cat_interactions_' + startDate + '_' + endDate + '.xlsx', 'Category')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -347,7 +347,7 @@
         <h3>FB Wall Post Performance</h3>
         <div class="table-actions no-print">
           <span class="table-meta" x-text="wallPosts.length + ' rows'"></span>
-          <button class="export-btn" @click="exportToExcel(getSortedData(wallPosts, 'fbWall'), 'fb_wall_posts_' + year + '_' + month + '.xlsx', 'Wall Posts')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(wallPosts, 'fbWall'), 'fb_wall_posts_' + startDate + '_' + endDate + '.xlsx', 'Wall Posts')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -391,7 +391,7 @@
               <strong x-text="data.reach.toLocaleString()"></strong> Reach ·
               <strong x-text="data.interactions.toLocaleString()"></strong> Int.
             </span>
-            <button class="export-btn" @click="exportToExcel(getSortedData(data.records, 'bd_' + name), name.replace(/[^a-zA-Z0-9_]/g, '_') + '_' + year + '_' + month + '.xlsx', name.substring(0, 31))">
+            <button class="export-btn" @click="exportToExcel(getSortedData(data.records, 'bd_' + name), name.replace(/[^a-zA-Z0-9_]/g, '_') + '_' + startDate + '_' + endDate + '.xlsx', name.substring(0, 31))">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Export
             </button>
@@ -452,14 +452,14 @@
       <div class="table-header-bar">
         <h3>IG Key Metrics</h3>
         <div class="table-actions no-print">
-          <button class="export-btn" @click="exportToExcel(getSortedData(igKeyMetrics, 'igKeyMetrics'), 'ig_key_metrics_' + year + '_' + month + '.xlsx', 'IG Key Metrics')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(igKeyMetrics, 'igKeyMetrics'), 'ig_key_metrics_' + startDate + '_' + endDate + '.xlsx', 'IG Key Metrics')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
           <button class="ai-btn" @click="getInsights('tbl-ig-key-metrics')">AI</button>
         </div>
       </div>
-      <div class="dash-table-wrap key-metrics-wrap">
+      <div class="dash-table-wrap">
         <table class="dash-table">
           <thead>
             <tr>
@@ -491,7 +491,7 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-ink">Posts by Pillar</h3>
           <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(igPillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'ig_posts_by_pillar_' + year + '_' + month + '.xlsx', 'Posts by Pillar')">
+            <button class="export-btn" @click="exportToExcel(igPillarDonut.map(d => ({Pillar: d.name, Posts: d.value})), 'ig_posts_by_pillar_' + startDate + '_' + endDate + '.xlsx', 'Posts by Pillar')">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Export
             </button>
@@ -521,7 +521,7 @@
         <div class="table-header-bar" style="padding:0 0 12px 0; border:none;">
           <h3 class="text-sm font-semibold text-ink">Story Link Clicks</h3>
           <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(igStoryClicks.map(d => ({Pillar: d.name, Clicks: d.value})), 'ig_story_clicks_' + year + '_' + month + '.xlsx', 'Story Clicks')">
+            <button class="export-btn" @click="exportToExcel(igStoryClicks.map(d => ({Pillar: d.name, Clicks: d.value})), 'ig_story_clicks_' + startDate + '_' + endDate + '.xlsx', 'Story Clicks')">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Export
             </button>
@@ -572,7 +572,7 @@
         <h3>IG Wall Posts</h3>
         <div class="table-actions no-print">
           <span class="table-meta" x-text="igWallPosts.length + ' rows'"></span>
-          <button class="export-btn" @click="exportToExcel(getSortedData(igWallPosts, 'igWall'), 'ig_wall_posts_' + year + '_' + month + '.xlsx', 'IG Wall Posts')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(igWallPosts, 'igWall'), 'ig_wall_posts_' + startDate + '_' + endDate + '.xlsx', 'IG Wall Posts')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -611,7 +611,7 @@
         <h3>IG Story</h3>
         <div class="table-actions no-print">
           <span class="table-meta" x-text="igStoryPosts.length + ' rows'"></span>
-          <button class="export-btn" @click="exportToExcel(getSortedData(igStoryPosts, 'igStory'), 'ig_story_' + year + '_' + month + '.xlsx', 'IG Story')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(igStoryPosts, 'igStory'), 'ig_story_' + startDate + '_' + endDate + '.xlsx', 'IG Story')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -640,14 +640,14 @@
     </div>
 
     <!-- ══ Competitor Analysis ══ -->
-    <h2 class="section-header">Competitor Analysis</h2>
+    <h2 class="section-header" x-text="'Competitor Analysis - ' + startDate.substring(0,7)"></h2>
 
     <!-- FPK: Competitors Overview — Table -->
     <div x-show="fpkCompetitorsOverview.length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
       <div class="table-header-bar">
         <h3>Competitors Overview</h3>
         <div class="table-actions no-print">
-          <button class="export-btn" @click="exportToExcel(getSortedData(fpkCompetitorsOverview, 'fpkOverview'), 'ig_competitors_overview_' + year + '_' + month + '.xlsx', 'Overview')">
+          <button class="export-btn" @click="exportToExcel(getSortedData(fpkCompetitorsOverview.filter(r => {delete r.key; delete r.color; delete r.logo; return true}), 'fpkOverview'), 'ig_competitors_overview_' + startDate + '_' + endDate + '.xlsx', 'Overview')">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             Export
           </button>
@@ -736,267 +736,6 @@
         <div class="prose-chat" x-html="insightsHtml['chart-fpk-words']"></div>
       </div>
     </div>
-  </div>
-</template>
-
-<!-- ── LinkedIn Page ── -->
-<template x-if="page === 'linkedin'">
-  <div class="space-y-6">
-
-    <!-- Row 1: Organic vs Paid donut | Net Followers bar -->
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Organic vs. Paid New Followers</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel((liData.org_paid_donut || []).map(d => ({Type: d.name, Count: d.value})), 'li_org_paid_' + year + '_' + month + '.xlsx', 'Org vs Paid')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-org-paid')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-org-paid" style="height:320px;"></div>
-        <div x-show="insightsText['chart-li-org-paid'] || insightsLoading['chart-li-org-paid']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-org-paid']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-org-paid']"></div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">LinkedIn Net Followers</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportLiNetFollowers()">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-net-followers')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-net-followers" style="height:320px;"></div>
-        <div x-show="insightsText['chart-li-net-followers'] || insightsLoading['chart-li-net-followers']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-net-followers']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-net-followers']"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Row 2: LinkedIn Clicks (full width) -->
-    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-ink">LinkedIn Clicks</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportLiDailyData(liData.clicks, 'clicks')">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-li-clicks')">AI</button>
-        </div>
-      </div>
-      <div id="chart-li-clicks" style="height:320px;"></div>
-      <div x-show="insightsText['chart-li-clicks'] || insightsLoading['chart-li-clicks']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-li-clicks']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-li-clicks']"></div>
-      </div>
-    </div>
-
-    <!-- Row 3: LinkedIn Impressions (full width) -->
-    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-ink">LinkedIn Impressions</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportLiDailyData(liData.impressions, 'impressions')">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-li-impressions')">AI</button>
-        </div>
-      </div>
-      <div id="chart-li-impressions" style="height:320px;"></div>
-      <div x-show="insightsText['chart-li-impressions'] || insightsLoading['chart-li-impressions']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-li-impressions']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-li-impressions']"></div>
-      </div>
-    </div>
-
-    <!-- Row 4: LinkedIn Social Actions (full width) -->
-    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-ink">LinkedIn Social Actions</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportLiSocialActions()">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-li-social')">AI</button>
-        </div>
-      </div>
-      <div id="chart-li-social" style="height:320px;"></div>
-      <div x-show="insightsText['chart-li-social'] || insightsLoading['chart-li-social']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-li-social']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-li-social']"></div>
-      </div>
-    </div>
-
-    <!-- Followers Demographics -->
-    <h2 class="section-header">Followers Demographics</h2>
-
-    <!-- Row 5: Top Countries | Top Company Size | Top Seniority -->
-    <div class="grid grid-cols-3 gap-4">
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Top Followers by Country</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(liData.top_countries || [], 'li_top_country_' + year + '_' + month + '.xlsx', 'Top Countries')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-country')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-country" style="height:300px;"></div>
-        <div x-show="insightsText['chart-li-country'] || insightsLoading['chart-li-country']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-country']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-country']"></div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Top Followers by Company Size</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(liData.top_company_size || [], 'li_top_company_size_' + year + '_' + month + '.xlsx', 'Top Company Size')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-company-size')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-company-size" style="height:300px;"></div>
-        <div x-show="insightsText['chart-li-company-size'] || insightsLoading['chart-li-company-size']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-company-size']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-company-size']"></div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Top Followers by Seniority Level</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(liData.top_seniority || [], 'li_top_seniority_' + year + '_' + month + '.xlsx', 'Top Seniority')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-seniority')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-seniority" style="height:300px;"></div>
-        <div x-show="insightsText['chart-li-seniority'] || insightsLoading['chart-li-seniority']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-seniority']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-seniority']"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Row 6: Job Function | Industry -->
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Followers by Job Function</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(liData.top_job_function || [], 'li_job_function_' + year + '_' + month + '.xlsx', 'Job Function')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-job-function')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-job-function" style="height:300px;"></div>
-        <div x-show="insightsText['chart-li-job-function'] || insightsLoading['chart-li-job-function']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-job-function']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-job-function']"></div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-ink">Followers by Industry</h3>
-          <div class="flex gap-2 no-print">
-            <button class="export-btn" @click="exportToExcel(liData.top_industry || [], 'li_industry_' + year + '_' + month + '.xlsx', 'Industry')">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Export
-            </button>
-            <button class="ai-btn" @click="getInsights('chart-li-industry')">AI</button>
-          </div>
-        </div>
-        <div id="chart-li-industry" style="height:300px;"></div>
-        <div x-show="insightsText['chart-li-industry'] || insightsLoading['chart-li-industry']" x-cloak class="ai-insights-panel mt-4">
-          <div x-show="insightsLoading['chart-li-industry']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-          <div class="prose-chat" x-html="insightsHtml['chart-li-industry']"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Row 7: Visitor Metrics (full width) -->
-    <div class="bg-white rounded-xl border border-line p-6 shadow-soft">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-ink">Visitor Metrics</h3>
-        <div class="flex gap-2 no-print">
-          <button class="export-btn" @click="exportLiVisitorMetrics()">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('chart-li-visitors')">AI</button>
-        </div>
-      </div>
-      <div id="chart-li-visitors" style="height:320px;"></div>
-      <div x-show="insightsText['chart-li-visitors'] || insightsLoading['chart-li-visitors']" x-cloak class="ai-insights-panel mt-4">
-        <div x-show="insightsLoading['chart-li-visitors']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['chart-li-visitors']"></div>
-      </div>
-    </div>
-
-    <!-- Post Content Table -->
-    <h2 class="section-header">Post Content</h2>
-    <div x-show="(liData.posts || []).length > 0" class="bg-white rounded-xl border border-line shadow-soft overflow-hidden">
-      <div class="table-header-bar">
-        <h3>LinkedIn Posts</h3>
-        <div class="table-actions no-print">
-          <span class="table-meta" x-text="(liData.posts || []).length + ' posts'"></span>
-          <button class="export-btn" @click="exportToExcel(getSortedData(liData.posts || [], 'liPosts'), 'li_posts_' + year + '_' + month + '.xlsx', 'LinkedIn Posts')">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export
-          </button>
-          <button class="ai-btn" @click="getInsights('tbl-li-posts')">AI</button>
-        </div>
-      </div>
-      <div class="dash-table-wrap">
-        <table class="dash-table">
-          <thead>
-            <tr>
-              <template x-for="col in ((liData.posts || []).length > 0 ? Object.keys(liData.posts[0]).filter(k => !k.startsWith('_')) : [])" :key="col">
-                <th @click="sortTable('liPosts', col)" class="cursor-pointer hover:text-primary select-none whitespace-nowrap" x-text="col + sortIcon('liPosts', col)"></th>
-              </template>
-            </tr>
-          </thead>
-          <tbody>
-            <template x-for="(row, i) in getSortedData(liData.posts || [], 'liPosts')" :key="i">
-              <tr>
-                <template x-for="col in (Object.keys(row).filter(k => !k.startsWith('_')))" :key="col">
-                  <td :class="cellClass(col)" :title="formatCell(row[col])" x-text="formatCell(row[col])"></td>
-                </template>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-      <div x-show="insightsText['tbl-li-posts'] || insightsLoading['tbl-li-posts']" x-cloak class="ai-insights-panel">
-        <div x-show="insightsLoading['tbl-li-posts']" class="text-xs text-ink-subtle">⏳ Generating insights...</div>
-        <div class="prose-chat" x-html="insightsHtml['tbl-li-posts']"></div>
-      </div>
-    </div>
-
   </div>
 </template>
 

@@ -38,10 +38,10 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="/static/css/app.css?v=25" />
+  <link rel="stylesheet" href="/static/css/app.css?v=22" />
 </head>
 <body class="font-sans bg-surface-muted text-ink antialiased min-h-screen"
-      x-data="dashboard({ year: {{ year }}, month: {{ month }}, page: '{{ page }}' })">
+      x-data="dashboard({ startDate: '{{ start_date }}', endDate: '{{ end_date }}', page: '{{ page }}' })">
 
   <div class="flex min-h-screen">
     <!-- Sidebar -->
@@ -51,22 +51,35 @@
         <div class="text-xs text-ink-subtle">Social Dashboard</div>
       </div>
 
-      <!-- Period Selector -->
+      <!-- Calendar Picker -->
       <div class="px-3 py-2">
-        <label class="text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">Period</label>
-        <div class="mt-1 flex gap-1">
-          <select x-model="selectedYear" @change="onPeriodChange()"
-                  class="w-full text-xs border border-line-strong rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-primary">
-            <template x-for="y in years" :key="y">
-              <option :value="y" x-text="y"></option>
-            </template>
-          </select>
-          <select x-model="selectedMonth" @change="onPeriodChange()"
-                  class="w-full text-xs border border-line-strong rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-primary">
-            <template x-for="m in monthsForYear" :key="m[0]">
-              <option :value="m[0]" x-text="m[1]"></option>
-            </template>
-          </select>
+        <label class="text-[10px] font-semibold uppercase tracking-wider text-ink-subtle">Date Range</label>
+        <div class="mt-1 text-xs font-medium text-ink" x-text="periodLabel"></div>
+        <div class="mt-2 flex flex-col gap-1">
+          <button @click="setPreset('lastMonth')"
+            class="text-xs px-2 py-1.5 rounded-lg border border-line-strong text-ink-muted hover:bg-primary-soft hover:text-primary hover:border-primary transition-colors text-left">
+            Last Month
+          </button>
+          <button @click="setPreset('last7Days')"
+            class="text-xs px-2 py-1.5 rounded-lg border border-line-strong text-ink-muted hover:bg-primary-soft hover:text-primary hover:border-primary transition-colors text-left">
+            Last 7 Days
+          </button>
+          <button @click="setPreset('thisYear')"
+            class="text-xs px-2 py-1.5 rounded-lg border border-line-strong text-ink-muted hover:bg-primary-soft hover:text-primary hover:border-primary transition-colors text-left">
+            This Year
+          </button>
+        </div>
+        <div class="mt-2 flex flex-col gap-1">
+          <label class="text-[10px] text-ink-subtle">Custom Range</label>
+          <input type="date" x-model="tempStart" :max="tempEnd || maxDate"
+            class="w-full text-[11px] border border-line-strong rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-primary" />
+          <input type="date" x-model="tempEnd" :min="tempStart" :max="maxDate"
+            class="w-full text-[11px] border border-line-strong rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-primary" />
+          <div x-show="dateError" x-cloak class="text-[10px] text-red-500 font-medium" x-text="dateError"></div>
+          <button @click="applyDateRange()"
+            class="w-full text-xs px-2 py-1.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors">
+            Apply
+          </button>
         </div>
       </div>
 
@@ -78,8 +91,6 @@
            class="px-3 py-2 rounded-lg text-sm transition-colors">FB Posts</a>
         <a href="/instagram" :class="page==='instagram' ? 'bg-primary-soft text-primary font-semibold' : 'text-ink-muted hover:bg-surface-muted'"
            class="px-3 py-2 rounded-lg text-sm transition-colors">Instagram</a>
-        <a href="/linkedin" :class="page==='linkedin' ? 'bg-primary-soft text-primary font-semibold' : 'text-ink-muted hover:bg-surface-muted'"
-           class="px-3 py-2 rounded-lg text-sm transition-colors">LinkedIn</a>
       </nav>
 
       <div class="p-3 border-t border-line">
@@ -180,8 +191,8 @@
         </div>
       </div>
   </div>
-  <script src="/static/js/dashboard.js?v=25"></script>
 
-  <script src="/static/js/charts.js?v=25"></script>
+  <script src="/static/js/dashboard.js?v=22"></script>
+  <script src="/static/js/charts.js?v=22"></script>
 </body>
 </html>
