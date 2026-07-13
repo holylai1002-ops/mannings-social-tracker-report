@@ -58,12 +58,24 @@ class PeriodData:
         fb_key = self.get("FB Key Metrics")
         ig_key = self.get("IG Key Metrics")
 
+        fb_fl = self.get("FB Followers")
+        if not fb_fl.empty and "Total Followers" in fb_fl.columns:
+            fb_followers = int(fb_fl["Total Followers"].iloc[-1])
+        else:
+            fb_followers = _get_metric(fb_key, "Total Followers", self.period_str)
+
+        ig_fl = self.get("IG Followers")
+        if not ig_fl.empty and "Total Followers" in ig_fl.columns:
+            ig_followers = int(ig_fl["Total Followers"].iloc[-1])
+        else:
+            ig_followers = _get_metric(ig_key, "Total Followers", self.period_str)
+
         return {
-            "fb_followers": _get_metric(fb_key, "Total Followers", self.period_str),
+            "fb_followers": fb_followers,
             "fb_growth": _get_metric(fb_key, "Net Followers Growth", self.period_str),
             "fb_wall_posts": len(self.get("FB Wall Post Performance")),
             "fb_interactions": _get_metric(fb_key, "Total Interactions", self.period_str),
-            "ig_followers": _get_metric(ig_key, "Total Followers", self.period_str),
+            "ig_followers": ig_followers,
             "ig_growth": _get_metric(ig_key, "Net Followers Growth", self.period_str),
             "ig_reach": _get_metric(ig_key, "Total Post Reach", self.period_str),
             "ig_interactions": _get_metric(ig_key, "Total Post Interaction", self.period_str),

@@ -229,14 +229,14 @@ function dashboard(initial) {
           return;
         } else if (this.page === 'fb_page' || this.page === 'fb_posts') {
           kpis = [
-            { label: 'Total Page Follows', value: this.fmt(data.fb_followers) },
+            { label: 'Total Followers', value: this.fmt(data.fb_followers) },
             { label: 'FB Page Follows Growth', value: this.fmt(data.fb_growth) },
             { label: 'No. of Wall Post', value: this.fmt(data.fb_wall_posts) },
             { label: 'Total Interactions', value: this.fmt(data.fb_interactions) },
           ];
         } else {
           kpis = [
-            { label: 'Instagram Followers', value: this.fmt(data.ig_followers) },
+            { label: 'Total Followers', value: this.fmt(data.ig_followers) },
             { label: 'Instagram Growth', value: this.fmt(data.ig_growth) },
             { label: 'Total Reach', value: this.fmt(data.ig_reach) },
             { label: 'Total Interactions', value: this.fmt(data.ig_interactions) },

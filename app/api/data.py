@@ -261,6 +261,13 @@ def api_fb_page(year: int = 0, month: int = 0):
     # FB Key Metrics — filtered to selected period column
     fb_key = pd_obj.get("FB Key Metrics")
     fb_key = _filter_key_metrics(fb_key, pd_obj.period_str)
+
+    # Override Total Followers with last day's value from API log
+    fb_fl = pd_obj.get("FB Followers")
+    if not fb_fl.empty and not fb_key.empty and "Total Followers" in fb_fl.columns and pd_obj.period_str in fb_key.columns:
+        last_val = int(fb_fl["Total Followers"].iloc[-1])
+        fb_key.loc[fb_key["Metric"] == "Total Followers", pd_obj.period_str] = last_val
+
     fb_key_metrics = _df_to_records(fb_key)
 
     return {
@@ -351,6 +358,13 @@ def api_instagram(year: int = 0, month: int = 0):
 
     # IG Key Metrics — filtered to selected period column
     ig_key = _filter_key_metrics(pd_obj.get("IG Key Metrics"), pd_obj.period_str)
+
+    # Override Total Followers with last day's value from API log
+    ig_fl = pd_obj.get("IG Followers")
+    if not ig_fl.empty and not ig_key.empty and "Total Followers" in ig_fl.columns and pd_obj.period_str in ig_key.columns:
+        last_val = int(ig_fl["Total Followers"].iloc[-1])
+        ig_key.loc[ig_key["Metric"] == "Total Followers", pd_obj.period_str] = last_val
+
     ig_pivot = pd_obj.get("IG Pivot (Pillar)")
     ig_story_pivot = pd_obj.get("IG Story Pivot")
     ig_eng = pd_obj.get("IG Engagement Pivot")

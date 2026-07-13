@@ -917,8 +917,8 @@ function renderLiNetFollowers(containerId, data) {
     xAxis: { type: 'category', data: xLabels, axisLabel: liXAxisLabel(), axisLine: { lineStyle: { color: '#E4E4E7' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#6E6F75' }, splitLine: { lineStyle: { color: '#F0F0F3' } } },
     series: [
-      { name: 'Organic', type: 'bar', data: data.organic || [], itemStyle: { color: LI_COLORS.organic }, barGap: '10%' },
-      { name: 'Paid', type: 'bar', data: data.paid || [], itemStyle: { color: LI_COLORS.paid } },
+      { name: 'Organic', type: 'bar', stack: 'total', data: data.organic || [], itemStyle: { color: LI_COLORS.organic } },
+      { name: 'Paid', type: 'bar', stack: 'total', data: data.paid || [], itemStyle: { color: LI_COLORS.paid } },
     ],
   });
 }
@@ -953,9 +953,9 @@ function renderLiSocialActions(containerId, data) {
     xAxis: { type: 'category', data: xLabels, axisLabel: liXAxisLabel(), axisLine: { lineStyle: { color: '#E4E4E7' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#6E6F75' }, splitLine: { lineStyle: { color: '#F0F0F3' } } },
     series: [
-      { name: 'Comments', type: 'bar', data: data.comments || [], itemStyle: { color: LI_COLORS.comments } },
-      { name: 'Likes', type: 'bar', data: data.likes || [], itemStyle: { color: LI_COLORS.likes } },
-      { name: 'Shares', type: 'bar', data: data.shares || [], itemStyle: { color: LI_COLORS.shares } },
+      { name: 'Likes', type: 'bar', stack: 'total', data: data.likes || [], itemStyle: { color: LI_COLORS.likes } },
+      { name: 'Comments', type: 'bar', stack: 'total', data: data.comments || [], itemStyle: { color: LI_COLORS.comments } },
+      { name: 'Shares', type: 'bar', stack: 'total', data: data.shares || [], itemStyle: { color: LI_COLORS.shares } },
     ],
   });
 }
