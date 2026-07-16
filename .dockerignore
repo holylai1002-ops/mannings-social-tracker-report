@@ -27,12 +27,11 @@ Mannings_FB_IG_Dashboard_Feed_v*.xlsx
 Dashboard definition.xlsx
 
 # Pipeline scripts
-1a_new*.py
-1b_new*.py
-2a_new*.py
-2b_new*.py
-3_new*.py
-3_v*.py
+1a_*.py
+1b_*.py
+2a_*.py
+2b_*.py
+3_*.py
 linkedin_pipeline.py
 config.py
 utils.py
