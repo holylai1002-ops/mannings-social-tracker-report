@@ -35,12 +35,11 @@ Mannings_*.json
 Mannings API daily log.json
 
 # Pipeline scripts (not needed for deployment)
-1a_new*.py
-1b_new*.py
-2a_new*.py
-2b_new*.py
-3_new*.py
-3_v*.py
+1a_*.py
+1b_*.py
+2a_*.py
+2b_*.py
+3_*.py
 linkedin_pipeline.py
 
 # Old versions
