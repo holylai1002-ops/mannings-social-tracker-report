@@ -1,8 +1,10 @@
 """
-LLM client — streaming chat via OpenRouter (free models, works in Hong Kong).
+LLM client — streaming chat + insights via OpenRouter (free models, works in Hong Kong).
 
 Uses the OpenAI SDK pointed at OpenRouter's API.
-Default model: deepseek/deepseek-chat-v3-0324:free
+Primary model: nvidia/nemotron-3-super-120b-a12b:free (120B MoE, 12B active, 1M context)
+Fallback chain: Tencent HY3 → Nemotron Nano 30B → Llama 3.3 70B → Gemma 4 31B →
+                Gemma 4 26B A4B → Nemotron Nano 9B → Llama 3.2 3B
 """
 
 import logging
@@ -33,9 +35,29 @@ def get_client():
                 "HTTP-Referer": settings.openrouter_referer,
                 "X-Title": settings.openrouter_title,
             },
-            timeout=60.0,
+            timeout=90.0,
         )
     return _client
+
+
+# Fallback chain ranked by suitability for Chinese/English social media analysis.
+# Primary model is settings.openrouter_model (nemotron-3-super-120b).
+FALLBACK_MODELS = [
+    "tencent/hy3:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+]
+
+_NO_KEY_MSG = (
+    "AI features require an OpenRouter API key.\n\n"
+    "1. Get a free key at https://openrouter.ai/keys\n"
+    "2. Set OPENROUTER_API_KEY in your .env file\n"
+    "3. Restart the server"
+)
 
 
 async def stream_chat(
@@ -57,15 +79,9 @@ async def stream_chat(
     system = SYSTEM_PROMPT.format(period=pd_obj.period_str, context=context)
 
     if client is None:
-        yield (
-            "AI 聊天功能需要設定 OPENROUTER_API_KEY。\n\n"
-            "1. 前往 https://openrouter.ai/keys 免費註冊並取得 API key\n"
-            "2. 在 `.env` 檔案中設定 `OPENROUTER_API_KEY=你的key`\n"
-            "3. 重啟伺服器"
-        )
+        yield _NO_KEY_MSG
         return
 
-    # Build OpenAI-style messages: system + conversation history
     api_messages = [{"role": "system", "content": system}]
     for m in messages:
         role = m.get("role", "user")
@@ -74,60 +90,48 @@ async def stream_chat(
         else:
             api_messages.append({"role": "assistant", "content": m["content"]})
 
-    try:
-        models_to_try = [settings.openrouter_model] + FALLBACK_MODELS
-        for i, model in enumerate(models_to_try):
-            try:
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=api_messages,
-                    temperature=0.4,
-                    max_tokens=4000,
-                    stream=True,
-                )
-                async for chunk in response:
-                    delta = chunk.choices[0].delta if chunk.choices else None
-                    if delta and delta.content:
-                        yield delta.content
-                return
-            except Exception as e:
-                logger.warning(f"Model {model} failed: {e}")
-                if i < len(models_to_try) - 1:
-                    continue
-                yield f"抱歉，生成回覆時發生錯誤：{e}"
-    except Exception as e:
-        logger.error(f"OpenRouter streaming error: {e}")
-        yield f"抱歉，生成回覆時發生錯誤：{e}"
+    models_to_try = [settings.openrouter_model] + FALLBACK_MODELS
+    for i, model in enumerate(models_to_try):
+        try:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=api_messages,
+                temperature=0.4,
+                max_tokens=4000,
+                stream=True,
+            )
+            async for chunk in response:
+                delta = chunk.choices[0].delta if chunk.choices else None
+                if delta and delta.content:
+                    yield delta.content
+            return
+        except Exception as e:
+            logger.warning(f"Model {model} failed: {e}")
+            if i < len(models_to_try) - 1:
+                continue
+            yield f"Sorry, an error occurred while generating a response: {e}"
 
 
-INSIGHTS_PROMPT = """你是 Mannings（萬寧）社交媒體數據分析專家。請分析以下圖表/表格數據，用繁體中文提供：
+INSIGHTS_PROMPT = """You are the Mannings social media analytics expert. Analyze the chart/table data below and provide insights in English.
 
-**Key Takeaway**（2-3 個重點摘要）
-**Actionable Insights**（2-3 個可執行的建議）
+**Key Takeaway** (2-3 main points)
+**Actionable Insights** (2-3 actionable recommendations)
 
-要求：
-1. 所有數字必須來自提供的數據
-2. 簡潔有力，用 markdown 列表格式
-3. 總字數不超過 200 字
+Rules:
+1. All numbers must come from the provided data — do not fabricate
+2. Be concise and impactful, use markdown bullet lists
+3. Total response under 300 words
 
-圖表名稱：{title}
-圖表類型：{ctype}
+Chart name: {title}
+Chart type: {ctype}
 
-數據摘要：
+Data summary:
 {summary}
 """
 
 
-FALLBACK_MODELS = [
-    "google/gemma-3-27b-it:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "deepseek/deepseek-chat-v3-0324:free",
-]
-
-
 async def _try_stream(client, model, messages, temperature, max_tokens):
-    """Attempt a streaming completion. Returns (async_gen, model) or raises."""
+    """Attempt a streaming completion. Returns the streaming response object."""
     response = await client.chat.completions.create(
         model=model,
         messages=messages,
@@ -146,7 +150,7 @@ async def stream_insights(
     """Stream AI insights for a specific chart/table."""
     client = get_client()
     if client is None:
-        yield "AI 分析功能需要設定 OPENROUTER_API_KEY。"
+        yield _NO_KEY_MSG
         return
 
     prompt = INSIGHTS_PROMPT.format(title=chart_title, ctype=chart_type, summary=data_summary)
@@ -155,7 +159,7 @@ async def stream_insights(
     models_to_try = [settings.openrouter_model] + FALLBACK_MODELS
     for i, model in enumerate(models_to_try):
         try:
-            response = await _try_stream(client, model, msg, 0.4, 600)
+            response = await _try_stream(client, model, msg, 0.4, 1500)
             async for chunk in response:
                 delta = chunk.choices[0].delta if chunk.choices else None
                 if delta and delta.content:
@@ -165,4 +169,4 @@ async def stream_insights(
             logger.warning(f"Model {model} failed: {e}")
             if i < len(models_to_try) - 1:
                 continue
-            yield f"抱歉，生成分析時發生錯誤：{e}"
+            yield f"Sorry, an error occurred while generating insights: {e}"
