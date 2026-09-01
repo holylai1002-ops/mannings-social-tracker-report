@@ -60,6 +60,70 @@ _NO_KEY_MSG = (
 )
 
 
+class _ThinkFilter:
+    """Suppress <think>/<thinking> reasoning blocks from a streamed token string."""
+
+    OPEN_TAGS = ("<think>", "<thinking>")
+    CLOSE_TAGS = {"<think>": "</think>", "<thinking>": "</thinking>"}
+
+    def __init__(self):
+        self._buf = ""
+        self._close = None
+
+    def feed(self, text: str) -> str:
+        self._buf += text
+        out = []
+        while True:
+            if self._close:
+                idx = self._buf.find(self._close)
+                if idx == -1:
+                    hold = len(self._close)
+                    if len(self._buf) > hold:
+                        self._buf = self._buf[-hold:]
+                    break
+                self._buf = self._buf[idx + len(self._close):]
+                self._close = None
+                continue
+            hits = [(self._buf.find(t), t) for t in self.OPEN_TAGS]
+            hits = [(i, t) for i, t in hits if i != -1]
+            if not hits:
+                keep = max(len(t) for t in self.OPEN_TAGS) - 1
+                if len(self._buf) > keep:
+                    out.append(self._buf[:-keep])
+                    self._buf = self._buf[-keep:]
+                break
+            i, t = min(hits)
+            out.append(self._buf[:i])
+            self._buf = self._buf[i + len(t):]
+            self._close = self.CLOSE_TAGS[t]
+        return "".join(out)
+
+    def flush(self) -> str:
+        rest, self._buf = self._buf, ""
+        return "" if self._close else rest
+
+
+async def _strip_reasoning(chunks: AsyncGenerator[str, None]) -> AsyncGenerator[str, None]:
+    filt = _ThinkFilter()
+    emitted = False
+    async for text in chunks:
+        piece = filt.feed(text)
+        if not piece:
+            continue
+        if not emitted:
+            piece = piece.lstrip()
+            if not piece:
+                continue
+            emitted = True
+        yield piece
+    tail = filt.flush()
+    if tail:
+        if not emitted:
+            tail = tail.lstrip()
+        if tail:
+            yield tail
+
+
 async def stream_chat(
     pd_obj: PeriodData,
     messages: list[dict],
@@ -99,11 +163,17 @@ async def stream_chat(
                 temperature=0.4,
                 max_tokens=4000,
                 stream=True,
+                extra_body={"reasoning": {"exclude": True}},
             )
-            async for chunk in response:
-                delta = chunk.choices[0].delta if chunk.choices else None
-                if delta and delta.content:
-                    yield delta.content
+
+            async def _deltas():
+                async for chunk in response:
+                    delta = chunk.choices[0].delta if chunk.choices else None
+                    if delta and delta.content:
+                        yield delta.content
+
+            async for piece in _strip_reasoning(_deltas()):
+                yield piece
             return
         except Exception as e:
             logger.warning(f"Model {model} failed: {e}")
@@ -121,6 +191,7 @@ Rules:
 1. All numbers must come from the provided data — do not fabricate
 2. Be concise and impactful, use markdown bullet lists
 3. Total response under 300 words
+4. Output only the two sections above — no reasoning, no preamble, no phrases like "Let me analyze"
 
 Chart name: {title}
 Chart type: {ctype}
@@ -160,10 +231,15 @@ async def stream_insights(
     for i, model in enumerate(models_to_try):
         try:
             response = await _try_stream(client, model, msg, 0.4, 1500)
-            async for chunk in response:
-                delta = chunk.choices[0].delta if chunk.choices else None
-                if delta and delta.content:
-                    yield delta.content
+
+            async def _deltas():
+                async for chunk in response:
+                    delta = chunk.choices[0].delta if chunk.choices else None
+                    if delta and delta.content:
+                        yield delta.content
+
+            async for piece in _strip_reasoning(_deltas()):
+                yield piece
             return
         except Exception as e:
             logger.warning(f"Model {model} failed: {e}")
